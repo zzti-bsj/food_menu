@@ -6,8 +6,9 @@
 1. 逐项核对 nature(四气)、flavor(五味)、meridian(归经)、benefits(功效)与其余字段
 2. 任一字段与通行记载不符、或属无据推测,即判定 fail 并在 problems 中指明
 3. solar_terms 的判定标准是上市旺季、口感最佳或传统宜食时段;不得以「四季可食」为由否决旺季标注,所标节气与采收旺季或传统宜食时段相符即视为正确
-4. 无充分把握同样判 fail(宁严勿滥)
-5. 只输出 JSON:{"verdict":"pass"|"fail","problems":["问题描述",...]};verdict 为 pass 时 problems 为空数组;不要输出任何其他文字
+4. classic_note 只核两点:典籍出处是否真实、要义是否与该食材明显相悖;表述属同类风格而非逐字原文,不构成否决理由
+5. 无充分把握同样判 fail(宁严勿滥)
+6. 只输出 JSON:{"verdict":"pass"|"fail","problems":["问题描述",...]};verdict 为 pass 时 problems 为空数组;不要输出任何其他文字
 
 待核验食材:
 {{ ingredient_json }}
