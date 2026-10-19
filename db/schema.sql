@@ -24,13 +24,3 @@ CREATE TABLE IF NOT EXISTS `ingredient` (
   UNIQUE KEY `uk_name` (`name`),
   CONSTRAINT `chk_nature` CHECK (`nature` IN ('寒','微寒','凉','平','微温','温','热'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='食材表';
-
-CREATE TABLE IF NOT EXISTS `reject_log` (
-  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name`       VARCHAR(50)  NOT NULL COMMENT '食材名',
-  `stage`      VARCHAR(20)  NOT NULL COMMENT '判否阶段:invalid/rejected',
-  `detail`     JSON         NOT NULL COMMENT '判否依据:校验错误或核验问题列表',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='判否日志';

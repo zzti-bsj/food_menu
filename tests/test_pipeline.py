@@ -100,6 +100,53 @@ def test_pipeline_duplicate_name(monkeypatch):
 
 def test_verifier_treats_bad_output_as_fail():
     verifier = IngredientVerifier(client=FakeJSONClient("不是 JSON"))
-    passed, problems = verifier.verify({"name": "山药"})
-    assert passed is False
+    verdict, problems = verifier.verify({"name": "山药"})
+    assert verdict == "fail"
     assert problems
+
+
+def test_verifier_returns_doubt_verdict():
+    verifier = IngredientVerifier(
+        client=FakeJSONClient('{"verdict":"存疑","problems":["文献分歧"]}')
+    )
+    verdict, problems = verifier.verify({"name": "山药"})
+    assert verdict == "存疑"
+    assert problems == ["文献分歧"]
+
+
+def test_pipeline_revision_recovers_from_invalid(monkeypatch):
+    inserted = []
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    bad = json.dumps({"name": "山药", "nature": "超热"}, ensure_ascii=False)
+    filler = IngredientFiller(client=FakeJSONClient([bad, FILLED]))
+    verifier = IngredientVerifier(client=FakeJSONClient('{"verdict":"pass","problems":[]}'))
+    pipeline = IngredientPipeline(filler=filler, verifier=verifier)
+
+    result = pipeline.run("山药")
+    assert result["stage"] == "inserted"
+    assert inserted and "修订要求" in filler.client.last_user
+
+
+def test_pipeline_revision_cap(monkeypatch):
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r: None)
+    bad = json.dumps({"name": "山药", "nature": "超热"}, ensure_ascii=False)
+    filler = IngredientFiller(client=FakeJSONClient(bad))
+    pipeline = IngredientPipeline(
+        filler=filler,
+        verifier=IngredientVerifier(client=FakeJSONClient('{"verdict":"pass","problems":[]}')),
+    )
+
+    result = pipeline.run("山药")
+    assert result["stage"] == "invalid"
+    assert filler.client.calls == 4
+
+
+def test_pipeline_doubt_inserts_with_doubts(monkeypatch):
+    inserted = []
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    pipeline, _ = make_pipeline(FILLED, '{"verdict":"存疑","problems":["性味记载存在分歧"]}')
+
+    result = pipeline.run("山药")
+    assert result["stage"] == "inserted"
+    assert result["doubts"] == ["性味记载存在分歧"]
+    assert inserted

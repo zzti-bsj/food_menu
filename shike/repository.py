@@ -1,5 +1,3 @@
-import json
-
 import pymysql
 
 from shike.config import db_config
@@ -76,19 +74,5 @@ def update_ingredient_status(name: str, status: str) -> bool:
             )
         conn.commit()
         return affected > 0
-    finally:
-        conn.close()
-
-
-def insert_reject_log(name: str, stage: str, detail: list[str]) -> None:
-    """写入一条判否日志。"""
-    conn = pymysql.connect(**db_config())
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO reject_log (name, stage, detail) VALUES (%s,%s,%s)",
-                (name, stage, json.dumps(detail, ensure_ascii=False)),
-            )
-        conn.commit()
     finally:
         conn.close()

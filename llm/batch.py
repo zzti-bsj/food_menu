@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from llm.recommend import SolarTermIngredientRecommender
 from llm.pipeline import IngredientPipeline
-from shike import repository
+from shike import reject_log
 
 
 class IngredientBatchPipeline:
@@ -22,7 +22,13 @@ class IngredientBatchPipeline:
         """返回 {"term","recommended","inserted","failed"};failed 含 stage 与原因。"""
         names = list(dict.fromkeys(self.recommender.recommend(term)))
         if not names:
-            return {"term": term, "recommended": [], "inserted": [], "failed": []}
+            return {
+                "term": term,
+                "recommended": [],
+                "inserted": [],
+                "doubts": {},
+                "failed": [],
+            }
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             results = list(pool.map(lambda n: self.pipeline_factory().run(n), names))
@@ -30,11 +36,14 @@ class IngredientBatchPipeline:
         for item in results:
             if item["stage"] in ("invalid", "rejected"):
                 detail = item.get("errors") or item.get("problems") or []
-                repository.insert_reject_log(item["name"], item["stage"], detail)
+                reject_log.log_reject(item["name"], item["stage"], detail)
+            elif item.get("doubts"):
+                reject_log.log_reject(item["name"], "存疑", item["doubts"])
 
         return {
             "term": term,
             "recommended": names,
             "inserted": [r["name"] for r in results if r["stage"] == "inserted"],
+            "doubts": {r["name"]: r["doubts"] for r in results if r.get("doubts")},
             "failed": [r for r in results if r["stage"] != "inserted"],
         }

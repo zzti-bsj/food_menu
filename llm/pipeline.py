@@ -7,31 +7,51 @@ from shike.validate import validate_ingredient
 
 
 class IngredientPipeline:
-    """食材入库流水线:填充 → 结构与值域校验 → 事实核验 → 入库(待审核)。"""
+    """食材入库流水线:填充 → 结构与值域校验 → 事实核验 → 入库(待审核);未过可带反馈修订重试。"""
 
     def __init__(
         self,
         filler: IngredientFiller | None = None,
         verifier: IngredientVerifier | None = None,
+        max_revisions: int = 3,
     ):
         self.filler = filler or IngredientFiller()
         self.verifier = verifier or IngredientVerifier()
+        self.max_revisions = max_revisions
 
     def run(self, name: str) -> dict:
-        """跑完整流程;stage 取值 inserted / invalid / rejected / duplicate。"""
-        try:
-            record = self.filler.fill(name)
-        except ValueError as exc:
-            return {"name": name, "stage": "invalid", "errors": [str(exc)]}
+        """跑完整流程;stage 取值 inserted / invalid / rejected / duplicate;存疑入库附 doubts。"""
+        feedback = None
+        last = {"stage": "invalid", "errors": ["流水线未产出结果"]}
+        for _ in range(1 + self.max_revisions):
+            try:
+                record = self.filler.fill(name, feedback=feedback)
+            except ValueError as exc:
+                feedback = [str(exc)]
+                last = {"stage": "invalid", "errors": feedback}
+                continue
 
-        errors = validate_ingredient(record, self.filler.vocab)
-        if errors:
-            return {"name": name, "stage": "invalid", "errors": errors}
+            errors = validate_ingredient(record, self.filler.vocab)
+            if errors:
+                feedback = errors
+                last = {"stage": "invalid", "errors": errors}
+                continue
 
-        passed, problems = self.verifier.verify(record)
-        if not passed:
-            return {"name": name, "stage": "rejected", "problems": problems}
+            verdict, problems = self.verifier.verify(record)
+            if verdict == "pass":
+                return self._insert(name, record)
+            if verdict == "存疑":
+                result = self._insert(name, record)
+                if result["stage"] == "inserted":
+                    result["doubts"] = problems
+                return result
+            feedback = problems
+            last = {"stage": "rejected", "problems": problems}
 
+        last["name"] = name
+        return last
+
+    def _insert(self, name: str, record: dict) -> dict:
         try:
             repository.insert_ingredient(record)
         except IntegrityError:

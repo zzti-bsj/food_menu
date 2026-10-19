@@ -78,6 +78,12 @@
   .actions { display: flex; gap: 8px; margin-top: 10px; }
   .actions button { padding: 3px 12px; font-size: 13px; }
   .actions button.current { background: var(--ink); border-color: var(--ink); color: #fff; cursor: default; }
+  .pager { display: flex; align-items: center; justify-content: center; gap: 10px;
+           padding: 4px 0 2px; color: var(--muted); font-size: 13px; }
+  .pager button { padding: 2px 10px; }
+  .doubt-tag { color: var(--pending); font-size: 12px; border: 1px solid currentColor;
+               border-radius: 10px; padding: 0 6px; }
+  .doubt-list { margin: 2px 0 8px; padding-left: 20px; color: var(--ink); font-size: 14px; }
 </style>
 </head>
 <body>
@@ -130,14 +136,43 @@ async function loadTerms() {
   select.innerHTML = terms.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
 }
 
-async function loadIngredients() {
-  const grouped = await fetchJSON("/api/ingredients");
+const PAGE_SIZE = 10;
+const pages = Object.fromEntries(STATUSES.map(s => [s, 1]));
+let groupedData = null;
+
+function renderGroups() {
   for (const status of STATUSES) {
-    const rows = grouped[status] || [];
+    const rows = groupedData[status] || [];
+    const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    pages[status] = Math.min(pages[status], totalPages);
+    const start = (pages[status] - 1) * PAGE_SIZE;
+    const slice = rows.slice(start, start + PAGE_SIZE);
     document.getElementById(`c-${status}`).textContent = `${rows.length} 枚`;
     const host = document.getElementById(`list-${status}`);
-    host.innerHTML = rows.length ? rows.map(cardHTML).join("") : `<div class="empty">暂无</div>`;
+    host.innerHTML = slice.length
+      ? slice.map(cardHTML).join("") + pagerHTML(status, totalPages)
+      : `<div class="empty">暂无</div>`;
   }
+}
+
+function pagerHTML(status, totalPages) {
+  if (totalPages <= 1) return "";
+  const cur = pages[status];
+  return `<div class="pager">
+    <button onclick="turnPage('${status}',-1)" ${cur === 1 ? "disabled" : ""}>‹</button>
+    <span>${cur} / ${totalPages}</span>
+    <button onclick="turnPage('${status}',1)" ${cur === totalPages ? "disabled" : ""}>›</button>
+  </div>`;
+}
+
+function turnPage(status, dir) {
+  pages[status] += dir;
+  renderGroups();
+}
+
+async function loadIngredients() {
+  groupedData = await fetchJSON("/api/ingredients");
+  renderGroups();
 }
 
 function cardHTML(row) {
@@ -170,7 +205,13 @@ async function setStatus(name, status) {
 
 function renderBatch(result) {
   if (!result) { document.getElementById("batch-result").innerHTML = ""; return; }
-  const ok = result.inserted.map(n => `<div class="ok-line">✓ ${esc(n)} 已入库(待审核)</div>`).join("");
+  const ok = result.inserted.map(n => {
+    const doubts = (result.doubts || {})[n] || [];
+    const list = doubts.length
+      ? `<ul class="doubt-list">${doubts.map(d => `<li>${esc(d)}</li>`).join("")}</ul>` : "";
+    return `<div class="ok-line">✓ ${esc(n)} 已入库(待审核)`
+      + (doubts.length ? ` <span class="doubt-tag">存疑</span>` : "") + `</div>${list}`;
+  }).join("");
   const failed = result.failed.map(f => {
     const reasons = [...(f.errors || []), ...(f.problems || [])];
     const list = reasons.length ? `<ul>${reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";

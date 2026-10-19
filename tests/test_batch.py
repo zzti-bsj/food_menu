@@ -1,5 +1,5 @@
 from llm.batch import IngredientBatchPipeline
-from shike import repository
+from shike import reject_log
 
 
 class FakeRecommender:
@@ -59,13 +59,15 @@ def test_batch_dedups_recommendations():
 def test_batch_empty_recommendation():
     batch = make_batch([], {})
     result = batch.run("大寒")
-    assert result == {"term": "大寒", "recommended": [], "inserted": [], "failed": []}
+    assert result == {
+        "term": "大寒", "recommended": [], "inserted": [], "doubts": {}, "failed": [],
+    }
 
 
 def test_batch_logs_invalid_and_rejected_but_not_duplicate(monkeypatch):
     logged = []
     monkeypatch.setattr(
-        repository, "insert_reject_log", lambda n, s, d: logged.append((n, s, d))
+        reject_log, "log_reject", lambda n, s, d: logged.append((n, s, d))
     )
     batch = make_batch(
         ["莲藕", "菱角", "芋头"],
@@ -80,3 +82,20 @@ def test_batch_logs_invalid_and_rejected_but_not_duplicate(monkeypatch):
         ("莲藕", "invalid", ["nature 超出值域"]),
         ("菱角", "rejected", ["功效无据"]),
     ]
+
+
+def test_batch_collects_and_logs_doubts(monkeypatch):
+    logged = []
+    monkeypatch.setattr(reject_log, "log_reject", lambda n, s, d: logged.append((n, s, d)))
+    batch = make_batch(
+        ["山药", "莲藕"],
+        {
+            "山药": {"name": "山药", "stage": "inserted", "doubts": ["性味文献分歧"]},
+            "莲藕": {"name": "莲藕", "stage": "inserted"},
+        },
+    )
+    result = batch.run("霜降")
+    assert result["inserted"] == ["山药", "莲藕"]
+    assert result["doubts"] == {"山药": ["性味文献分歧"]}
+    assert result["failed"] == []
+    assert logged == [("山药", "存疑", ["性味文献分歧"])]

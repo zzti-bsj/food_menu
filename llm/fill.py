@@ -16,11 +16,12 @@ class IngredientFiller:
         self.client = client or LLMClient.for_role("fill")
         self.vocab = vocab or load_vocab()
 
-    def fill(self, name: str) -> dict:
-        """渲染含全部封闭词表的提示词并调用模型,返回 JSON dict。"""
+    def fill(self, name: str, feedback: list[str] | None = None) -> dict:
+        """渲染含全部封闭词表的提示词并调用模型,返回 JSON dict;feedback 为上轮被驳原因。"""
         template = Template(PROMPT_FILE.read_text(encoding="utf-8"))
         user = template.render(
             name=name,
+            feedback=feedback,
             categories=self.vocab.categories,
             natures=self.vocab.natures,
             flavors=self.vocab.flavors,

@@ -15,8 +15,8 @@ class IngredientVerifier:
     def __init__(self, client: LLMClient | None = None):
         self.client = client or LLMClient.for_role("verify")
 
-    def verify(self, record: dict) -> tuple[bool, list[str]]:
-        """返回 (是否通过, 问题列表);模型输出不合约定视为不通过。"""
+    def verify(self, record: dict) -> tuple[str, list[str]]:
+        """返回 (verdict: pass/fail/存疑, 问题列表);模型输出不合约定视为 fail。"""
         template = Template(PROMPT_FILE.read_text(encoding="utf-8"))
         user = template.render(
             ingredient_json=json.dumps(record, ensure_ascii=False, indent=2)
@@ -24,9 +24,12 @@ class IngredientVerifier:
         try:
             result = self.client.chat_json(SYSTEM, user)
         except ValueError:
-            return False, ["验证 LLM 输出不是合法 JSON"]
+            return "fail", ["验证 LLM 输出不是合法 JSON"]
 
         problems = result.get("problems")
         if not isinstance(problems, list):
             problems = [str(problems)] if problems else []
-        return result.get("verdict") == "pass", [str(p) for p in problems]
+        verdict = result.get("verdict")
+        if verdict not in ("pass", "fail", "存疑"):
+            return "fail", ["验证 LLM verdict 不合法"]
+        return verdict, [str(p) for p in problems]

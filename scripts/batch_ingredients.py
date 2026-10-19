@@ -20,6 +20,8 @@ def main() -> int:
     )
     for name in result["inserted"]:
         print(f"  ✓ {name} 已入库(待审核)")
+        for doubt in result["doubts"].get(name, []):
+            print(f"      ⚠ 存疑:{doubt}")
     for item in result["failed"]:
         detail = json.dumps(item, ensure_ascii=False)
         print(f"  ✗ {item['name']} [{item['stage']}] {detail}")
