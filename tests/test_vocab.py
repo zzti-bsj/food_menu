@@ -42,7 +42,7 @@ def test_parse_categories():
 def test_parse_nature_flavor_meridian():
     nfm = parse_nature_flavor_meridian(_read("词表-性味归经.md"))
     assert nfm["natures"] == ["寒", "微寒", "凉", "平", "微温", "温", "热"]
-    assert nfm["flavors"] == ["酸", "苦", "甘", "辛", "咸"]
+    assert nfm["flavors"] == ["酸", "苦", "甘", "辛", "咸", "淡", "涩"]
     assert len(nfm["meridians"]) == 12
     assert "三焦" in nfm["meridians"] and "心包" in nfm["meridians"]
 
@@ -72,6 +72,6 @@ def test_load_vocab_aggregates():
     assert len(v.solar_terms) == 24
     assert len(v.categories) == 15
     assert len(v.meridians) == 12
-    assert len(v.benefits) == 63
+    assert len(v.benefits) == 66
     assert v.solar_term_index["白露"] == 14
     assert v.solar_term_index["大寒"] == 23
