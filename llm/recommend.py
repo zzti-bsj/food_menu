@@ -23,7 +23,7 @@ class SolarTermIngredientRecommender:
         if term not in self.vocab.solar_term_index:
             raise ValueError(f"非法节气: {term},合法值见 data/vocab/词表-节气.md")
 
-        existing = repository.list_names_by_solar_term(term)
+        existing = repository.list_names_by_solar_terms(self._nearby_terms(term))
         template = Template(PROMPT_FILE.read_text(encoding="utf-8"))
         user = template.render(term=term, existing=existing)
 
@@ -31,3 +31,9 @@ class SolarTermIngredientRecommender:
         if EXHAUSTED in output:
             return []
         return [line.strip() for line in output.splitlines() if line.strip()]
+
+    def _nearby_terms(self, term: str) -> list[str]:
+        """当前节气及前后各两个节气,共 5 个;跨大寒、立春循环。"""
+        terms = self.vocab.solar_terms
+        center = self.vocab.solar_term_index[term]
+        return [terms[(center + offset) % len(terms)] for offset in (-2, -1, 0, 1, 2)]

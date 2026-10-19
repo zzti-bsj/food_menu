@@ -9,4 +9,4 @@
 4. 输出仅为食材名称,一行一个;不写编号、解释、标点或任何其他文字
 
 节气:{{ term }}
-已收录食材:{% if existing %}{{ existing | join("、") }}{% else %}(无){% endif %}
+已收录食材(该节气及其前后各两个节气内已收录者,均不得再推荐):{% if existing %}{{ existing | join("、") }}{% else %}(无){% endif %}

@@ -17,15 +17,13 @@ _INGREDIENT_FIELDS = (
 )
 
 
-def list_names_by_solar_term(term: str) -> list[str]:
-    """返回已收录某节气的全部食材名。"""
+def list_names_by_solar_terms(terms: list[str]) -> list[str]:
+    """返回已收录任一给定节气的全部食材名,按 id 升序。"""
+    clause = " OR ".join(["FIND_IN_SET(%s, solar_terms)"] * len(terms))
     conn = pymysql.connect(**db_config())
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                "SELECT name FROM ingredient WHERE FIND_IN_SET(%s, solar_terms)",
-                (term,),
-            )
+            cur.execute(f"SELECT name FROM ingredient WHERE {clause} ORDER BY id", terms)
             return [row[0] for row in cur.fetchall()]
     finally:
         conn.close()
