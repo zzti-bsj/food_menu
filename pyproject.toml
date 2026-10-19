@@ -1,0 +1,9 @@
+[project]
+name = "shike"
+version = "0.1.0"
+description = "食刻 · 二十四节气菜谱(数据层)"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
