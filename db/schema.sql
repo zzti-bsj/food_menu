@@ -17,9 +17,20 @@ CREATE TABLE IF NOT EXISTS `ingredient` (
   `caution`      VARCHAR(500) DEFAULT NULL COMMENT '食用注意,可空',
   `classic_note` VARCHAR(500) DEFAULT NULL COMMENT '国学注脚,典籍出处+一句原文,可空',
   `solar_terms`  VARCHAR(100) NOT NULL COMMENT '当令节气,多选,按节气序号升序写入',
+  `status`       VARCHAR(10)  NOT NULL DEFAULT '待审核' COMMENT '审核状态:待审核/已通过/已驳回',
   `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_name` (`name`),
   CONSTRAINT `chk_nature` CHECK (`nature` IN ('寒','微寒','凉','平','微温','温','热'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='食材表';
+
+CREATE TABLE IF NOT EXISTS `reject_log` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `name`       VARCHAR(50)  NOT NULL COMMENT '食材名',
+  `stage`      VARCHAR(20)  NOT NULL COMMENT '判否阶段:invalid/rejected',
+  `detail`     JSON         NOT NULL COMMENT '判否依据:校验错误或核验问题列表',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='判否日志';

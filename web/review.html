@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 审核台</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #fff; --ink: #2b2a27; --muted: #8a867d;
+    --line: #e5e2db; --accent: #3f6b4f;
+    --pending: #b07b1e; --pass: #3f7d4e; --fail: #b04a3f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 20px 28px 12px;
+  }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  main { padding: 0 28px 40px; max-width: 1280px; margin: 0 auto; }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 22px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); font-weight: 600; }
+  .run-row { display: flex; gap: 10px; align-items: center; }
+  select, button {
+    font: inherit; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--card); color: var(--ink); padding: 6px 14px;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: wait; }
+  #run-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #run-btn:hover:not(:disabled) { opacity: .9; color: #fff; }
+  .run-note { color: var(--muted); font-size: 13px; }
+
+  #batch-result { margin-top: 14px; }
+  .batch-line { font-weight: 600; }
+  .ok-line { color: var(--pass); }
+  .fail-item { color: var(--fail); margin-top: 6px; }
+  .fail-item ul { margin: 2px 0 0; padding-left: 20px; color: var(--ink); font-size: 14px; }
+
+  .groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .group h2 {
+    margin: 4px 0 10px; font-size: 14px; color: var(--muted); font-weight: 600;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .group h2 .count { font-size: 13px; }
+  .g-pending .count { color: var(--pending); }
+  .g-pass .count { color: var(--pass); }
+  .g-fail .count { color: var(--fail); }
+  .empty { color: var(--muted); font-size: 13px; padding: 12px; text-align: center;
+           border: 1px dashed var(--line); border-radius: 8px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .card .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .card .name { font-size: 17px; font-weight: 700; }
+  .card .badge {
+    font-size: 12px; padding: 1px 8px; border-radius: 10px;
+    border: 1px solid currentColor;
+  }
+  .badge.s-待审核 { color: var(--pending); }
+  .badge.s-已通过 { color: var(--pass); }
+  .badge.s-已驳回 { color: var(--fail); }
+  .fields { font-size: 13.5px; }
+  .fields div { display: flex; gap: 8px; }
+  .fields dt { color: var(--muted); white-space: nowrap; margin: 0; flex: 0 0 4.5em; }
+  .fields dd { margin: 0; word-break: break-all; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .actions button { padding: 3px 12px; font-size: 13px; }
+  .actions button.current { background: var(--ink); border-color: var(--ink); color: #fff; cursor: default; }
+</style>
+</head>
+<body>
+<header>
+  <h1>食刻 · 审核台</h1>
+  <span class="sub">节气食材流水线 · 人工把关</span>
+</header>
+<main>
+  <section class="panel">
+    <h2>LLM 流水线</h2>
+    <div class="run-row">
+      <select id="term-select"></select>
+      <button id="run-btn">运行流水线</button>
+      <span class="run-note" id="run-note">结果保存在服务端:刷新不丢,重跑覆盖</span>
+    </div>
+    <div id="batch-result"></div>
+  </section>
+
+  <section class="groups">
+    <div class="group g-pending"><h2>待审核 <span class="count" id="c-待审核"></span></h2><div id="list-待审核"></div></div>
+    <div class="group g-pass"><h2>已通过 <span class="count" id="c-已通过"></span></h2><div id="list-已通过"></div></div>
+    <div class="group g-fail"><h2>已驳回 <span class="count" id="c-已驳回"></span></h2><div id="list-已驳回"></div></div>
+  </section>
+</main>
+
+<script>
+const FIELD_LABELS = [
+  ["aliases", "别名"], ["category", "分类"], ["nature", "四气"], ["flavor", "五味"],
+  ["meridian", "归经"], ["benefits", "功效"], ["season_note", "时令"],
+  ["caution", "注意"], ["classic_note", "典籍"], ["solar_terms", "当令节气"],
+];
+const STATUSES = ["待审核", "已通过", "已驳回"];
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => (
+    {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]
+  ));
+}
+
+async function fetchJSON(url, options) {
+  const res = await fetch(url, options);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `请求失败 ${res.status}`);
+  return body;
+}
+
+async function loadTerms() {
+  const terms = await fetchJSON("/api/terms");
+  const select = document.getElementById("term-select");
+  select.innerHTML = terms.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+}
+
+async function loadIngredients() {
+  const grouped = await fetchJSON("/api/ingredients");
+  for (const status of STATUSES) {
+    const rows = grouped[status] || [];
+    document.getElementById(`c-${status}`).textContent = `${rows.length} 枚`;
+    const host = document.getElementById(`list-${status}`);
+    host.innerHTML = rows.length ? rows.map(cardHTML).join("") : `<div class="empty">暂无</div>`;
+  }
+}
+
+function cardHTML(row) {
+  const fields = FIELD_LABELS
+    .filter(([key]) => row[key])
+    .map(([key, label]) => `<div><dt>${label}</dt><dd>${esc(row[key])}</dd></div>`)
+    .join("");
+  const buttons = STATUSES.map(s =>
+    `<button class="${s === row.status ? "current" : ""}" ${s === row.status ? "disabled" : ""}
+             onclick="setStatus('${esc(row.name)}','${s}')">${s}</button>`
+  ).join("");
+  return `<div class="card">
+    <div class="head"><span class="name">${esc(row.name)}</span>
+      <span class="badge s-${esc(row.status)}">${esc(row.status)}</span></div>
+    <dl class="fields">${fields}</dl>
+    <div class="actions">${buttons}</div>
+  </div>`;
+}
+
+async function setStatus(name, status) {
+  try {
+    await fetchJSON("/api/status", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name, status}),
+    });
+    await loadIngredients();
+  } catch (err) { alert(err.message); }
+}
+
+function renderBatch(result) {
+  if (!result) { document.getElementById("batch-result").innerHTML = ""; return; }
+  const ok = result.inserted.map(n => `<div class="ok-line">✓ ${esc(n)} 已入库(待审核)</div>`).join("");
+  const failed = result.failed.map(f => {
+    const reasons = [...(f.errors || []), ...(f.problems || [])];
+    const list = reasons.length ? `<ul>${reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+    return `<div class="fail-item">✗ ${esc(f.name)} [${esc(f.stage)}]${list}</div>`;
+  }).join("");
+  document.getElementById("batch-result").innerHTML = `
+    <div class="batch-line">节气 ${esc(result.term)}:推荐 ${result.recommended.length},
+      入库 ${result.inserted.length},未过 ${result.failed.length}</div>
+    ${ok}${failed}`;
+}
+
+async function loadLastBatch() {
+  renderBatch(await fetchJSON("/api/batch/last"));
+}
+
+async function runBatch() {
+  const btn = document.getElementById("run-btn");
+  const term = document.getElementById("term-select").value;
+  btn.disabled = true;
+  document.getElementById("run-note").textContent = "流水线运行中,约需一分钟…";
+  try {
+    renderBatch(await fetchJSON("/api/batch", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({term}),
+    }));
+    await loadIngredients();
+    document.getElementById("run-note").textContent = "结果保存在服务端:刷新不丢,重跑覆盖";
+  } catch (err) {
+    document.getElementById("run-note").textContent = err.message;
+  } finally { btn.disabled = false; }
+}
+
+document.getElementById("run-btn").addEventListener("click", runBatch);
+loadTerms().catch(err => alert(err.message));
+loadIngredients().catch(err => alert(err.message));
+loadLastBatch().catch(err => alert(err.message));
+</script>
+</body>
+</html>
