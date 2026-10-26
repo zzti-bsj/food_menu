@@ -21,6 +21,12 @@
   }
   header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
   header .sub { color: var(--muted); font-size: 13px; }
+  .tabs { display: flex; gap: 8px; padding: 0 28px 14px; }
+  .tab-btn {
+    font: inherit; font-size: 14px; padding: 5px 18px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 18px; background: var(--card); color: var(--muted);
+  }
+  .tab-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
   main { padding: 0 28px 40px; max-width: 1280px; margin: 0 auto; }
 
   .panel {
@@ -29,22 +35,24 @@
   }
   .panel h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); font-weight: 600; }
   .run-row { display: flex; gap: 10px; align-items: center; }
-  select, button {
+  select, button, input[type="text"] {
     font: inherit; border: 1px solid var(--line); border-radius: 6px;
     background: var(--card); color: var(--ink); padding: 6px 14px;
   }
+  input[type="text"] { flex: 1; min-width: 240px; }
   button { cursor: pointer; }
   button:hover { border-color: var(--accent); color: var(--accent); }
   button:disabled { opacity: .5; cursor: wait; }
-  #run-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
-  #run-btn:hover:not(:disabled) { opacity: .9; color: #fff; }
+  #run-btn, #dish-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #run-btn:hover:not(:disabled), #dish-btn:hover:not(:disabled) { opacity: .9; color: #fff; }
   .run-note { color: var(--muted); font-size: 13px; }
 
-  #batch-result { margin-top: 14px; }
+  #batch-result, #dish-result { margin-top: 14px; }
   .batch-line { font-weight: 600; }
   .ok-line { color: var(--pass); }
   .fail-item { color: var(--fail); margin-top: 6px; }
   .fail-item ul { margin: 2px 0 0; padding-left: 20px; color: var(--ink); font-size: 14px; }
+  .meta-line { color: var(--ink); font-size: 14px; margin-top: 4px; }
 
   .groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .group h2 {
@@ -62,7 +70,7 @@
     background: var(--card); border: 1px solid var(--line); border-radius: 10px;
     padding: 12px 14px; margin-bottom: 12px;
   }
-  .card .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .card .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
   .card .name { font-size: 17px; font-weight: 700; }
   .card .badge {
     font-size: 12px; padding: 1px 8px; border-radius: 10px;
@@ -71,10 +79,16 @@
   .badge.s-待审核 { color: var(--pending); }
   .badge.s-已通过 { color: var(--pass); }
   .badge.s-已驳回 { color: var(--fail); }
+  .badge.cat { color: var(--muted); }
   .fields { font-size: 13.5px; }
   .fields div { display: flex; gap: 8px; }
   .fields dt { color: var(--muted); white-space: nowrap; margin: 0; flex: 0 0 4.5em; }
   .fields dd { margin: 0; word-break: break-all; }
+  .block-title { font-size: 13px; color: var(--muted); font-weight: 600; margin: 8px 0 2px; }
+  .steps-block, .remark-block {
+    font-size: 14px; white-space: pre-line; margin: 0;
+  }
+  .remark-block { color: var(--pending); }
   .actions { display: flex; gap: 8px; margin-top: 10px; }
   .actions button { padding: 3px 12px; font-size: 13px; }
   .actions button.current { background: var(--ink); border-color: var(--ink); color: #fff; cursor: default; }
@@ -89,33 +103,76 @@
 <body>
 <header>
   <h1>食刻 · 审核台</h1>
-  <span class="sub">节气食材流水线 · 人工把关</span>
+  <span class="sub">节气食材 × 健康厨师 · 人工把关</span>
 </header>
+<div class="tabs">
+  <button class="tab-btn active" id="tab-ingredients" onclick="showPage('ingredients')">食材</button>
+  <button class="tab-btn" id="tab-dishes" onclick="showPage('dishes')">菜品</button>
+</div>
 <main>
-  <section class="panel">
-    <h2>LLM 流水线</h2>
-    <div class="run-row">
-      <select id="term-select"></select>
-      <button id="run-btn">运行流水线</button>
-      <span class="run-note" id="run-note">结果保存在服务端:刷新不丢,重跑覆盖</span>
-    </div>
-    <div id="batch-result"></div>
+  <section id="page-ingredients">
+    <section class="panel">
+      <h2>LLM 流水线 · 节气食材</h2>
+      <div class="run-row">
+        <select id="term-select"></select>
+        <button id="run-btn">运行流水线</button>
+        <span class="run-note" id="run-note">结果保存在服务端:刷新不丢,重跑覆盖</span>
+      </div>
+      <div id="batch-result"></div>
+    </section>
+
+    <section class="groups">
+      <div class="group g-pending"><h2>待审核 <span class="count" id="ingredient-c-待审核"></span></h2><div id="ingredient-list-待审核"></div></div>
+      <div class="group g-pass"><h2>已通过 <span class="count" id="ingredient-c-已通过"></span></h2><div id="ingredient-list-已通过"></div></div>
+      <div class="group g-fail"><h2>已驳回 <span class="count" id="ingredient-c-已驳回"></span></h2><div id="ingredient-list-已驳回"></div></div>
+    </section>
   </section>
 
-  <section class="groups">
-    <div class="group g-pending"><h2>待审核 <span class="count" id="c-待审核"></span></h2><div id="list-待审核"></div></div>
-    <div class="group g-pass"><h2>已通过 <span class="count" id="c-已通过"></span></h2><div id="list-已通过"></div></div>
-    <div class="group g-fail"><h2>已驳回 <span class="count" id="c-已驳回"></span></h2><div id="list-已驳回"></div></div>
+  <section id="page-dishes" style="display:none">
+    <section class="panel">
+      <h2>健康厨师 · 生成菜品</h2>
+      <div class="run-row">
+        <input type="text" id="dish-input" list="ingredient-names"
+               placeholder="候选食材,逗号分隔,如:白萝卜、豆腐、菠菜(库内食材有输入提示)">
+        <datalist id="ingredient-names"></datalist>
+        <button id="dish-btn">生成一道菜</button>
+        <span class="run-note" id="dish-note">一次专注一道;多食材不够搭配会被弃置并说明原因</span>
+      </div>
+      <div id="dish-result"></div>
+    </section>
+
+    <section class="groups">
+      <div class="group g-pending"><h2>待审核 <span class="count" id="dish-c-待审核"></span></h2><div id="dish-list-待审核"></div></div>
+      <div class="group g-pass"><h2>已通过 <span class="count" id="dish-c-已通过"></span></h2><div id="dish-list-已通过"></div></div>
+      <div class="group g-fail"><h2>已驳回 <span class="count" id="dish-c-已驳回"></span></h2><div id="dish-list-已驳回"></div></div>
+    </section>
   </section>
 </main>
 
 <script>
-const FIELD_LABELS = [
+const ING_FIELD_LABELS = [
   ["aliases", "别名"], ["category", "分类"], ["nature", "四气"], ["flavor", "五味"],
   ["meridian", "归经"], ["benefits", "功效"], ["season_note", "时令"],
   ["caution", "注意"], ["classic_note", "典籍"], ["solar_terms", "当令节气"],
 ];
+const DISH_FIELD_LABELS = [
+  ["main_ingredients", "主料"], ["extras", "辅料"], ["calories", "热量"],
+  ["style", "风格"], ["solar_terms", "当令节气"],
+];
+const DISH_LONG_LABELS = [["benefits", "养生好处"], ["caution", "忌口"]];
 const STATUSES = ["待审核", "已通过", "已驳回"];
+const PAGE_SIZE = 10;
+
+const ENTITIES = {
+  ingredient: {
+    data: null, pages: Object.fromEntries(STATUSES.map(s => [s, 1])),
+    labels: ING_FIELD_LABELS, listUrl: "/api/ingredients", statusUrl: "/api/status",
+  },
+  dish: {
+    data: null, pages: Object.fromEntries(STATUSES.map(s => [s, 1])),
+    labels: DISH_FIELD_LABELS, listUrl: "/api/dishes", statusUrl: "/api/dish/status",
+  },
+};
 
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => (
@@ -130,76 +187,104 @@ async function fetchJSON(url, options) {
   return body;
 }
 
+function showPage(name) {
+  document.getElementById("page-ingredients").style.display = name === "ingredients" ? "" : "none";
+  document.getElementById("page-dishes").style.display = name === "dishes" ? "" : "none";
+  document.getElementById("tab-ingredients").classList.toggle("active", name === "ingredients");
+  document.getElementById("tab-dishes").classList.toggle("active", name === "dishes");
+}
+
 async function loadTerms() {
   const terms = await fetchJSON("/api/terms");
   const select = document.getElementById("term-select");
   select.innerHTML = terms.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
 }
 
-const PAGE_SIZE = 10;
-const pages = Object.fromEntries(STATUSES.map(s => [s, 1]));
-let groupedData = null;
-
-function renderGroups() {
+function renderGroups(entity) {
+  const cfg = ENTITIES[entity];
+  const grouped = cfg.data;
   for (const status of STATUSES) {
-    const rows = groupedData[status] || [];
+    const rows = grouped[status] || [];
     const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    pages[status] = Math.min(pages[status], totalPages);
-    const start = (pages[status] - 1) * PAGE_SIZE;
+    cfg.pages[status] = Math.min(cfg.pages[status], totalPages);
+    const start = (cfg.pages[status] - 1) * PAGE_SIZE;
     const slice = rows.slice(start, start + PAGE_SIZE);
-    document.getElementById(`c-${status}`).textContent = `${rows.length} 枚`;
-    const host = document.getElementById(`list-${status}`);
+    document.getElementById(`${entity}-c-${status}`).textContent = `${rows.length} ${entity === "dish" ? "道" : "枚"}`;
+    const host = document.getElementById(`${entity}-list-${status}`);
     host.innerHTML = slice.length
-      ? slice.map(cardHTML).join("") + pagerHTML(status, totalPages)
+      ? slice.map(row => cardHTML(entity, row)).join("") + pagerHTML(entity, status, totalPages)
       : `<div class="empty">暂无</div>`;
   }
 }
 
-function pagerHTML(status, totalPages) {
+function pagerHTML(entity, status, totalPages) {
   if (totalPages <= 1) return "";
-  const cur = pages[status];
+  const cur = ENTITIES[entity].pages[status];
   return `<div class="pager">
-    <button onclick="turnPage('${status}',-1)" ${cur === 1 ? "disabled" : ""}>‹</button>
+    <button onclick="turnPage('${entity}','${status}',-1)" ${cur === 1 ? "disabled" : ""}>‹</button>
     <span>${cur} / ${totalPages}</span>
-    <button onclick="turnPage('${status}',1)" ${cur === totalPages ? "disabled" : ""}>›</button>
+    <button onclick="turnPage('${entity}','${status}',1)" ${cur === totalPages ? "disabled" : ""}>›</button>
   </div>`;
 }
 
-function turnPage(status, dir) {
-  pages[status] += dir;
-  renderGroups();
+function turnPage(entity, status, dir) {
+  ENTITIES[entity].pages[status] += dir;
+  renderGroups(entity);
 }
 
-async function loadIngredients() {
-  groupedData = await fetchJSON("/api/ingredients");
-  renderGroups();
+function statusButtons(entity, row) {
+  return STATUSES.map(s =>
+    `<button class="${s === row.status ? "current" : ""}" ${s === row.status ? "disabled" : ""}
+             onclick="setStatus('${entity}','${esc(row.name)}','${s}')">${s}</button>`
+  ).join("");
 }
 
-function cardHTML(row) {
-  const fields = FIELD_LABELS
+function cardHTML(entity, row) {
+  const cfg = ENTITIES[entity];
+  const fields = cfg.labels
     .filter(([key]) => row[key])
     .map(([key, label]) => `<div><dt>${label}</dt><dd>${esc(row[key])}</dd></div>`)
     .join("");
-  const buttons = STATUSES.map(s =>
-    `<button class="${s === row.status ? "current" : ""}" ${s === row.status ? "disabled" : ""}
-             onclick="setStatus('${esc(row.name)}','${s}')">${s}</button>`
-  ).join("");
+  let extra = "";
+  if (entity === "dish") {
+    const longFields = DISH_LONG_LABELS
+      .filter(([key]) => row[key])
+      .map(([key, label]) => `<p class="block-title">${label}</p><p class="steps-block">${esc(row[key])}</p>`)
+      .join("");
+    const steps = `<p class="block-title">制作步骤</p><p class="steps-block">${esc(row.steps)}</p>`;
+    const remark = row.remark
+      ? `<p class="block-title">备注(校验存疑)</p><p class="remark-block">${esc(row.remark)}</p>` : "";
+    extra = longFields + steps + remark;
+  }
+  const catBadge = entity === "dish" ? ` <span class="badge cat">${esc(row.category)}</span>` : "";
   return `<div class="card">
-    <div class="head"><span class="name">${esc(row.name)}</span>
+    <div class="head"><span class="name">${esc(row.name)}</span>${catBadge}
       <span class="badge s-${esc(row.status)}">${esc(row.status)}</span></div>
-    <dl class="fields">${fields}</dl>
-    <div class="actions">${buttons}</div>
+    <dl class="fields">${fields}</dl>${extra}
+    <div class="actions">${statusButtons(entity, row)}</div>
   </div>`;
 }
 
-async function setStatus(name, status) {
+async function loadEntity(entity) {
+  ENTITIES[entity].data = await fetchJSON(ENTITIES[entity].listUrl);
+  renderGroups(entity);
+}
+
+async function fillDatalist() {
+  const grouped = await fetchJSON("/api/ingredients");
+  const names = STATUSES.flatMap(s => (grouped[s] || []).map(r => r.name));
+  document.getElementById("ingredient-names").innerHTML =
+    names.map(n => `<option value="${esc(n)}">`).join("");
+}
+
+async function setStatus(entity, name, status) {
   try {
-    await fetchJSON("/api/status", {
+    await fetchJSON(ENTITIES[entity].statusUrl, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({name, status}),
     });
-    await loadIngredients();
+    await loadEntity(entity);
   } catch (err) { alert(err.message); }
 }
 
@@ -238,17 +323,61 @@ async function runBatch() {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({term}),
     }));
-    await loadIngredients();
+    await Promise.all([loadEntity("ingredient"), fillDatalist()]);
     document.getElementById("run-note").textContent = "结果保存在服务端:刷新不丢,重跑覆盖";
   } catch (err) {
     document.getElementById("run-note").textContent = err.message;
   } finally { btn.disabled = false; }
 }
 
+function renderDishResult(result) {
+  const host = document.getElementById("dish-result");
+  const excluded = (result.excluded || []).map(e =>
+    `<li>${esc(e.name)}:${esc(e.reason)}</li>`).join("");
+  const excludedBlock = excluded
+    ? `<div class="meta-line">弃置食材:<ul class="doubt-list">${excluded}</ul></div>` : "";
+  if (result.stage === "inserted") {
+    const doubts = result.doubts || [];
+    const doubtBlock = doubts.length
+      ? `<div class="fail-item">存疑(已写入备注):<ul>${doubts.map(d => `<li>${esc(d)}</li>`).join("")}</ul></div>` : "";
+    host.innerHTML = `
+      <div class="ok-line">✓ ${esc(result.name)} 已入库(待审核)</div>
+      ${excludedBlock}${doubtBlock}`;
+  } else {
+    const reasons = [...(result.errors || []), ...(result.problems || [])];
+    const list = reasons.length
+      ? `<ul>${reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+    host.innerHTML = `<div class="fail-item">✗ ${esc(result.name || "未产出")} [${esc(result.stage)}]${list}</div>`;
+  }
+}
+
+async function createDish() {
+  const btn = document.getElementById("dish-btn");
+  const raw = document.getElementById("dish-input").value;
+  const ingredients = raw.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+  if (!ingredients.length) { alert("请先输入至少一个候选食材"); return; }
+  btn.disabled = true;
+  document.getElementById("dish-note").textContent = "健康厨师设计 + 校验把关中,约需一两分钟…";
+  try {
+    renderDishResult(await fetchJSON("/api/dishes", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ingredients}),
+    }));
+    await loadEntity("dish");
+    document.getElementById("dish-note").textContent = "一次专注一道;多食材不够搭配会被弃置并说明原因";
+  } catch (err) {
+    document.getElementById("dish-note").textContent = err.message;
+  } finally { btn.disabled = false; }
+}
+
 document.getElementById("run-btn").addEventListener("click", runBatch);
+document.getElementById("dish-btn").addEventListener("click", createDish);
 loadTerms().catch(err => alert(err.message));
-loadIngredients().catch(err => alert(err.message));
+loadEntity("ingredient").catch(err => alert(err.message));
+loadEntity("dish").catch(err => alert(err.message));
 loadLastBatch().catch(err => alert(err.message));
+fillDatalist().catch(() => {});
 </script>
 </body>
 </html>

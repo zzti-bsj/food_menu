@@ -75,3 +75,18 @@ def test_load_vocab_aggregates():
     assert len(v.benefits) == 66
     assert v.solar_term_index["白露"] == 14
     assert v.solar_term_index["大寒"] == 23
+
+
+def test_parse_dish_categories():
+    cats = parse_categories(_read("词表-菜品分类.md"), header="厨师")
+    assert cats == ["健康厨师", "美食大厨"]
+
+
+def test_parse_categories_rejects_duplicate():
+    text = "| 大类 | 子类 |\n|--|--|\n| 谷类 | 米 |\n| 谷类 | 面 |\n"
+    with pytest.raises(ValueError, match="重复"):
+        parse_categories(text)
+
+
+def test_load_vocab_includes_dish_categories():
+    assert VOCAB.dish_categories == ("健康厨师", "美食大厨")

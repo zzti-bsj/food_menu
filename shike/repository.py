@@ -74,3 +74,81 @@ def update_ingredient_status(name: str, status: str) -> bool:
         return affected > 0
     finally:
         conn.close()
+
+
+def find_ingredients_by_names(names: list[str]) -> list[dict]:
+    """按名称列表返回库内食材的性味归经档案(pantry 用),按 id 升序;不存在的忽略。"""
+    if not names:
+        return []
+    placeholders = ",".join(["%s"] * len(names))
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                "SELECT name,nature,flavor,meridian,benefits,caution FROM ingredient "
+                f"WHERE name IN ({placeholders}) ORDER BY id",
+                list(names),
+            )
+            return list(cur.fetchall())
+    finally:
+        conn.close()
+
+
+_DISH_FIELDS = (
+    "name",
+    "category",
+    "main_ingredients",
+    "extras",
+    "steps",
+    "calories",
+    "benefits",
+    "caution",
+    "style",
+    "solar_terms",
+    "remark",
+)
+
+
+def insert_dish(record: dict) -> None:
+    """以待审核状态写入一道菜;name 冲突时抛 pymysql IntegrityError。"""
+    fields = [f for f in _DISH_FIELDS if record.get(f) is not None]
+    columns = ",".join(f"`{f}`" for f in fields + ["status"])
+    placeholders = ",".join(["%s"] * (len(fields) + 1))
+    values = [record[f] or None for f in fields] + ["待审核"]
+
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"INSERT INTO dish ({columns}) VALUES ({placeholders})", values)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def list_dishes() -> list[dict]:
+    """返回全部菜品完整字段,待审核在前。"""
+    fields = ", ".join(f"`{f}`" for f in ("id", *_DISH_FIELDS, "status"))
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                f"SELECT {fields} FROM dish "
+                "ORDER BY FIELD(status,'待审核','已通过','已驳回'), id"
+            )
+            return list(cur.fetchall())
+    finally:
+        conn.close()
+
+
+def update_dish_status(name: str, status: str) -> bool:
+    """更新菜品审核状态;返回是否命中。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                "UPDATE dish SET status=%s WHERE name=%s", (status, name)
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()

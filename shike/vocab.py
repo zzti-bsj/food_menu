@@ -42,9 +42,9 @@ def parse_solar_terms(text: str) -> list[str]:
     return terms
 
 
-def parse_categories(text: str) -> list[str]:
-    """解析分类表,返回大类名列表。"""
-    cats = [r[0] for r in _parse_table_rows(text) if r[0] != "大类"]
+def parse_categories(text: str, header: str = "大类") -> list[str]:
+    """解析分类表,返回首列词条列表(跳过表头行)。"""
+    cats = [r[0] for r in _parse_table_rows(text) if r[0] != header]
     _reject_dups("分类", cats)
     return cats
 
@@ -87,6 +87,7 @@ class Vocab:
 
     solar_terms: tuple[str, ...]
     categories: tuple[str, ...]
+    dish_categories: tuple[str, ...]
     natures: tuple[str, ...]
     flavors: tuple[str, ...]
     meridians: tuple[str, ...]
@@ -105,6 +106,11 @@ def load_vocab(vocab_dir: Path | None = None) -> Vocab:
     return Vocab(
         solar_terms=tuple(parse_solar_terms((base / "词表-节气.md").read_text(encoding="utf-8"))),
         categories=tuple(parse_categories((base / "词表-分类.md").read_text(encoding="utf-8"))),
+        dish_categories=tuple(
+            parse_categories(
+                (base / "词表-菜品分类.md").read_text(encoding="utf-8"), header="厨师"
+            )
+        ),
         natures=tuple(nfm["natures"]),
         flavors=tuple(nfm["flavors"]),
         meridians=tuple(nfm["meridians"]),

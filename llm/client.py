@@ -15,7 +15,6 @@ def _strip_fences(text: str) -> str:
 
 class LLMClient:
     """OpenAI 兼容 Chat 客户端;按档案名构建,可对接 GLM/DeepSeek/OpenAI 等。"""
-
     def __init__(self, profile: str | None = None, **overrides):
         name = profile or profile_for("default")
         if name not in PROFILES:

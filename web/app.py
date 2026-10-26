@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 from llm.batch import IngredientBatchPipeline
+from llm.dish_pipeline import DishPipeline
 from shike import repository
 from shike.vocab import load_vocab
 
@@ -56,6 +57,39 @@ def run_batch():
 @app.get("/api/batch/last")
 def last_batch():
     return jsonify(_last_batch)
+
+
+@app.get("/api/dishes")
+def dishes():
+    grouped = {s: [] for s in STATUSES}
+    for row in repository.list_dishes():
+        grouped[row["status"]].append(row)
+    return jsonify(grouped)
+
+
+@app.post("/api/dishes")
+def create_dish():
+    data = request.get_json(silent=True) or {}
+    ingredients = data.get("ingredients")
+    if (
+        not isinstance(ingredients, list)
+        or not ingredients
+        or not all(isinstance(i, str) and i.strip() for i in ingredients)
+    ):
+        return jsonify({"error": "ingredients 须为非空字符串数组"}), 400
+    names = list(dict.fromkeys(i.strip() for i in ingredients))
+    return jsonify(DishPipeline().run(names))
+
+
+@app.post("/api/dish/status")
+def set_dish_status():
+    data = request.get_json(silent=True) or {}
+    name, status = data.get("name"), data.get("status")
+    if not name or status not in STATUSES:
+        return jsonify({"error": "参数不合法"}), 400
+    if not repository.update_dish_status(name, status):
+        return jsonify({"error": f"未找到菜品:{name}"}), 404
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":
