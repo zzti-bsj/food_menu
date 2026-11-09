@@ -88,6 +88,7 @@ class Vocab:
     solar_terms: tuple[str, ...]
     categories: tuple[str, ...]
     dish_categories: tuple[str, ...]
+    cuisines: tuple[str, ...]
     natures: tuple[str, ...]
     flavors: tuple[str, ...]
     meridians: tuple[str, ...]
@@ -110,6 +111,9 @@ def load_vocab(vocab_dir: Path | None = None) -> Vocab:
             parse_categories(
                 (base / "词表-菜品分类.md").read_text(encoding="utf-8"), header="厨师"
             )
+        ),
+        cuisines=tuple(
+            parse_categories((base / "词表-菜系.md").read_text(encoding="utf-8"), header="菜系")
         ),
         natures=tuple(nfm["natures"]),
         flavors=tuple(nfm["flavors"]),

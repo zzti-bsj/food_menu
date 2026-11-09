@@ -90,3 +90,16 @@ def test_parse_categories_rejects_duplicate():
 
 def test_load_vocab_includes_dish_categories():
     assert VOCAB.dish_categories == ("健康厨师", "美食大厨")
+
+
+def test_parse_cuisines():
+    cuisines = parse_categories(_read("词表-菜系.md"), header="菜系")
+    assert len(cuisines) == 18
+    assert cuisines[:8] == ["鲁菜", "川菜", "粤菜", "苏菜", "闽菜", "浙菜", "湘菜", "徽菜"]
+    assert "家常菜" in cuisines and "东北菜" in cuisines
+    assert "日式" in cuisines and "西餐" in cuisines
+
+
+def test_load_vocab_includes_cuisines():
+    assert VOCAB.cuisines[:2] == ("鲁菜", "川菜")
+    assert "西餐" in VOCAB.cuisines
