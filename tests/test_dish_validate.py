@@ -92,3 +92,27 @@ def test_text_length_limits():
     errors = _check({"name": "超" * 101, "style": "长" * 101, "benefits": "长" * 501,
                      "caution": "长" * 501})
     assert len(errors) == 4
+
+
+STORY = "入口煳辣荔枝味,酸甜微辣平衡,鸡丁滑嫩、花生酥脆;相传自清代丁宝桢家厨,川菜味型的教科书。"
+
+
+def test_story_is_optional_known_field_with_limit():
+    record = {**VALID, "story": STORY}
+    assert validate_dish(record, VOCAB) == []
+    errors = validate_dish({**record, "story": "长" * 501}, VOCAB)
+    assert any(e.startswith("story:") for e in errors)
+
+
+def test_cuisines_param_checks_style_first_segment():
+    cuisines = ("川菜", "粤菜", "家常菜")
+    ok = validate_dish({**VALID, "style": "川菜,煳辣快炒", "story": STORY}, VOCAB, cuisines=cuisines)
+    assert ok == []
+    bad = validate_dish({**VALID, "style": "日式,炒", "story": STORY}, VOCAB, cuisines=cuisines)
+    assert any("style" in e and "菜系词表" in e for e in bad)
+
+
+def test_cuisines_param_default_keeps_style_free():
+    record = {**VALID, "style": "随便写,炖"}
+    assert validate_dish(record, VOCAB) == []
+    assert validate_dish(record, VOCAB, cuisines=None) == []

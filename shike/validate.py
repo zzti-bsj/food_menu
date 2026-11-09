@@ -64,14 +64,16 @@ DISH_REQUIRED_FIELDS = (
     "style",
     "solar_terms",
 )
-DISH_OPTIONAL_FIELDS = ("excluded", "extras", "caution")
+DISH_OPTIONAL_FIELDS = ("excluded", "extras", "caution", "story")
 DISH_ALL_FIELDS = DISH_REQUIRED_FIELDS + DISH_OPTIONAL_FIELDS
-DISH_TEXT_LIMITS = {"name": 100, "style": 100, "benefits": 500, "caution": 500}
+DISH_TEXT_LIMITS = {"name": 100, "style": 100, "benefits": 500, "caution": 500, "story": 500}
 DISH_JOINED_LIMIT = 500
 
 
-def validate_dish(record: dict, vocab: Vocab) -> list[str]:
-    """校验菜谱记录的结构、词表值域与长度上限,返回错误列表,空列表即通过。"""
+def validate_dish(
+    record: dict, vocab: Vocab, cuisines: tuple[str, ...] | None = None
+) -> list[str]:
+    """校验菜谱记录的结构、词表值域与长度上限; cuisines 提供时校验 style 菜系位。"""
     if not isinstance(record, dict):
         return [f"记录须为 JSON 对象,当前为 {type(record).__name__}"]
 
@@ -147,5 +149,12 @@ def validate_dish(record: dict, vocab: Vocab) -> list[str]:
             seq = [vocab.solar_term_index[t] for t in values]
             if seq != sorted(seq):
                 errors.append("solar_terms: 未按节气先后顺序升序")
+
+    if cuisines:
+        style = record.get("style")
+        if isinstance(style, str) and style.strip():
+            first = style.split(",")[0].strip()
+            if first not in set(cuisines):
+                errors.append(f"style: 菜系位「{first}」不在菜系词表中")
 
     return errors
