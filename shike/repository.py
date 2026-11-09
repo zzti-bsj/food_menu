@@ -102,6 +102,7 @@ _DISH_FIELDS = (
     "steps",
     "calories",
     "benefits",
+    "story",
     "caution",
     "style",
     "solar_terms",
@@ -147,6 +148,46 @@ def update_dish_status(name: str, status: str) -> bool:
         with conn.cursor() as cur:
             affected = cur.execute(
                 "UPDATE dish SET status=%s WHERE name=%s", (status, name)
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
+def list_dish_names_by_cuisine(cuisine: str) -> list[str]:
+    """返回 style 菜系位为给定菜系的全部菜名(含所有审核状态,已驳回也避重),按 id 升序。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT name FROM dish WHERE style LIKE %s ORDER BY id", (f"{cuisine},%",)
+            )
+            return [row[0] for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def find_dish_by_name(name: str) -> dict | None:
+    """按菜名查一枚菜品(任意审核状态),用于菜名模式入库预检;不命中返回 None。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                "SELECT id,name,category,status FROM dish WHERE name=%s LIMIT 1", (name,)
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def update_dish_image(name: str, image: str | None) -> bool:
+    """更新菜品图片 URL;image 传 None 清空。返回是否命中。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                "UPDATE dish SET image=%s WHERE name=%s", (image, name)
             )
         conn.commit()
         return affected > 0

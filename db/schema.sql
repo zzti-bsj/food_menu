@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS `dish` (
   `steps`        TEXT NOT NULL COMMENT '制作步骤,编号分行,火候与技巧写入步骤',
   `calories`     VARCHAR(50)  NOT NULL COMMENT '每份热量估算,如「约350千卡」',
   `benefits`     VARCHAR(500) NOT NULL COMMENT '养生好处,中医性味+现代营养多角度',
+  `story`        VARCHAR(500) DEFAULT NULL COMMENT '风味与文化背景,美食大厨出品',
+  `image`        VARCHAR(500) DEFAULT NULL COMMENT '菜品图片URL/路径',
   `caution`      VARCHAR(500) DEFAULT NULL COMMENT '忌口提示,不适宜人群,可空',
   `style`        VARCHAR(100) NOT NULL COMMENT '菜系+烹饪方式,逗号分隔,如「日式,凉拌」',
   `solar_terms`  VARCHAR(100) NOT NULL COMMENT '时令节气,多选升序,值域同词表-节气',
