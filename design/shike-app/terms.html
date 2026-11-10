@@ -15,13 +15,13 @@
   .season { margin-top: var(--s5); }
   .season-head {
     margin: 0 var(--s5);
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 14px var(--s4);
     display: flex; align-items: center; gap: 10px;
-    color: #fff;
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-card);
+    border: 1px solid rgba(255,255,255,.85);
   }
   .season-head::after {         /* 云弧纹样（装饰） */
     content: "";
@@ -29,7 +29,7 @@
     right: -26px; top: -30px;
     width: 110px; height: 110px;
     border-radius: 50%;
-    border: 1.5px solid rgba(255,255,255,.22);
+    border: 2px dashed rgba(255,255,255,.9);
   }
   .season-head h2 {
     font-family: var(--font-display);
@@ -37,17 +37,17 @@
   }
   .season-head span {
     font-size: 12px; font-weight: 700;
-    background: rgba(255,255,255,.92);
+    background: var(--surface);
     color: var(--ink);
     border-radius: 999px;
     padding: 4px 10px;
     margin-left: auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    box-shadow: 0 2px 6px rgba(38,35,28,.10);
   }
-  .sh-spring { background: linear-gradient(120deg, #37714A 0%, #2B5A3A 100%); }
-  .sh-summer { background: linear-gradient(120deg, #B5432C 0%, #8F3421 100%); }
-  .sh-autumn { background: linear-gradient(120deg, #8A5D15 0%, #6E4A10 100%); }
-  .sh-winter { background: linear-gradient(120deg, #2E4A66 0%, #1F324A 100%); }
+  .sh-spring { background: linear-gradient(120deg, #DFF2E6 0%, #CBF0DA 100%); color: var(--spring-deep); }
+  .sh-summer { background: linear-gradient(120deg, #FBE7DF 0%, #F9D9CB 100%); color: var(--summer-deep); }
+  .sh-autumn { background: linear-gradient(120deg, #FBF0DA 0%, #F6E3BC 100%); color: var(--autumn-deep); }
+  .sh-winter { background: linear-gradient(120deg, #DFF0F9 0%, #CCE6F5 100%); color: var(--winter-deep); }
 
   .term-grid {
     display: grid;

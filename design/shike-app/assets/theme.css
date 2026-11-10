@@ -1,34 +1,38 @@
 /* ============================================================
-   食刻 App · 共享主题 v1.1（design/shike-app/assets/theme.css）
+   食刻 App · 共享主题 v1.2（design/shike-app/assets/theme.css）
    事实来源：../DESIGN-SYSTEM.md —— 单页例外须在页面内注释说明
-   v1.1 视觉升级：封面级 Hero / 朱砂印章 / 食签牌 / 悬浮 Dock / 纹理层次
+   v1.1 视觉升级：印章 / 食签牌 / 封面 / Dock
+   v1.2 青春活力：粉彩渐变封面（墨字）· 高饱和签牌彩影 · 贴纸徽章
+        · 手绘涂鸦点缀（sparkle/squiggle）· 更明快的纸面与彩斑
    ============================================================ */
 
 /* ---------- Tokens ---------- */
 :root {
-  /* 中性层：宣纸 × 墨 */
-  --bg: #F6F2E9;
+  /* 中性层：亮纸 × 墨 */
+  --bg: #FAF6ED;
   --surface: #FFFFFF;
   --surface-2: #FBF8F1;
   --ink: #26231C;
   --ink-2: #5B564A;
   --ink-3: #6E6858;
-  --line: #E6E0D2;
-  --line-strong: #D6CFBC;
+  --line: #EAE4D6;
+  --line-strong: #DAD3C0;
 
-  /* 四季点彩 */
-  --spring: #37714A;  --spring-soft: #E8F0E9;  --spring-deep: #2B5A3A;
-  --summer: #B5432C;  --summer-soft: #F8EAE4;  --summer-deep: #8F3421;
-  --autumn: #8A5D15;  --autumn-soft: #F5EDDC;  --autumn-deep: #6E4A10;
-  --winter: #2E4A66;  --winter-soft: #E6EDF3;  --winter-deep: #1F324A;
+  /* 四季点彩（主色作文字/描边，深档作渐变深字，淡底作填充） */
+  --spring: #2E8C55;  --spring-soft: #DFF2E6;  --spring-deep: #1F6B3E;
+  --summer: #C14F32;  --summer-soft: #FBE7DF;  --summer-deep: #93391F;
+  --autumn: #B7791A;  --autumn-soft: #FBF0DA;  --autumn-deep: #8A5D15;
+  --winter: #35759F;  --winter-soft: #E2F0FA;  --winter-deep: #24586E;
 
-  /* 当前季 accent（原型处于立冬 → 冬·黛） */
+  /* 当前季 accent（原型处于立冬 → 冬·青蓝，比 v1.1 更明快） */
   --accent: var(--winter);
   --accent-soft: var(--winter-soft);
-  --accent-deep: #223A52;
+  --accent-deep: var(--winter-deep);
 
-  /* 朱砂印章（品牌点睛，装饰性使用） */
-  --seal: #B03A2E;
+  /* 品牌点睛 */
+  --seal: #B03A2E;                        /* 朱砂印章（白字 6.0:1） */
+  --amber: #E8912A;                       /* 活力琥珀（贴纸/弧线，配墨字） */
+  --amber-deep: #A96C10;
 
   /* 功能色 */
   --success: #3D7A50;
@@ -45,9 +49,9 @@
 
   /* 圆角 / 阴影 / 动效 */
   --r-s: 10px; --r-m: 16px; --r-l: 24px;
-  --shadow-card: 0 1px 2px rgba(38,35,28,.06), 0 6px 20px rgba(38,35,28,.09);
-  --shadow-lift: 0 2px 6px rgba(38,35,28,.08), 0 14px 34px rgba(38,35,28,.14);
-  --shadow-float: 0 10px 40px rgba(38,35,28,.18);
+  --shadow-card: 0 1px 2px rgba(38,35,28,.05), 0 6px 20px rgba(38,35,28,.08);
+  --shadow-lift: 0 2px 6px rgba(38,35,28,.08), 0 14px 34px rgba(38,35,28,.13);
+  --shadow-float: 0 10px 40px rgba(38,35,28,.16);
   --dur: 200ms;
   --ease: cubic-bezier(.2,.7,.3,1);
 }
@@ -63,11 +67,12 @@ body {
   place-items: center;
   padding: 40px 16px;
   -webkit-font-smoothing: antialiased;
-  /* 宣纸工作台：暖色晕染 */
+  /* 工作台：明快彩斑 */
   background:
-    radial-gradient(1100px 560px at 15% -8%, rgba(176,58,46,.05), transparent 60%),
-    radial-gradient(900px 520px at 108% 8%, rgba(46,74,102,.07), transparent 55%),
-    #E7E1D3;
+    radial-gradient(700px 420px at 12% -6%, rgba(46,140,85,.10), transparent 60%),
+    radial-gradient(680px 420px at 106% 4%, rgba(232,145,42,.13), transparent 58%),
+    radial-gradient(560px 380px at 55% 108%, rgba(58,124,168,.10), transparent 60%),
+    #EFEAD9;
 }
 
 .phone {
@@ -75,7 +80,7 @@ body {
   height: 844px;
   background: var(--bg);
   border-radius: 48px;
-  border: 1px solid #CBC3B0;
+  border: 1px solid #D3CCB8;
   box-shadow: var(--shadow-float);
   overflow: hidden;
   position: relative;
@@ -108,8 +113,7 @@ body {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* 悬浮 Dock 下垫：Dock 62 + 底距 22 + 余量 */
-  padding-bottom: 122px;
+  padding-bottom: 122px;   /* 悬浮 Dock 下垫 */
   scrollbar-width: none;
 }
 .screen::-webkit-scrollbar { display: none; }
@@ -128,7 +132,7 @@ body {
   pointer-events: none;
 }
 
-/* ---------- 悬浮 Dock 导航（v1.1） ---------- */
+/* ---------- 悬浮 Dock 导航 ---------- */
 .tabbar {
   position: absolute;
   left: 14px; right: 14px; bottom: 22px;
@@ -136,9 +140,9 @@ body {
   display: flex;
   gap: 4px;
   padding: 8px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid rgba(255,255,255,.65);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,.85);
   border-radius: 26px;
   box-shadow: var(--shadow-lift);
 }
@@ -148,7 +152,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 7px 0 5px;             /* 热区 ≥44 */
+  padding: 7px 0 5px;
   text-decoration: none;
   color: var(--ink-3);
   border-radius: 18px;
@@ -157,7 +161,7 @@ body {
 .tabbar a:active { transform: scale(.94); }
 .tabbar a span { font-size: 11px; font-weight: 500; line-height: 1.2; }
 .tabbar a[aria-current="page"] {
-  color: var(--accent);
+  color: var(--accent-deep);
   background: var(--accent-soft);
 }
 .tabbar a[aria-current="page"] span { font-weight: 700; }
@@ -189,107 +193,79 @@ body {
 }
 .icon-btn:active { background: rgba(38,35,28,.06); transform: scale(.94); }
 
-/* ---------- 品牌元件（v1.1） ---------- */
+/* ---------- 品牌元件 ---------- */
 
 /* 朱砂印章 */
 .seal {
   display: inline-grid;
   place-items: center;
   width: 34px; height: 34px;
-  border-radius: 6px;
-  background: var(--seal);
+  border-radius: 8px;
+  background: linear-gradient(150deg, #CC4A3C 0%, var(--seal) 100%);
   color: #fff;
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 700;
-  box-shadow: 0 2px 6px rgba(176,58,46,.35);
+  box-shadow: 0 3px 8px rgba(176,58,46,.32);
+  transform: rotate(-3deg);
 }
 
-/* 食签牌：食材/菜品的视觉锚点（渐变底 + 衬线首字，替代照片位） */
+/* 食签牌：高饱和渐变 + 彩色投影（装饰字 aria-hidden） */
 .mono {
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 16px;
   color: #fff;
   font-family: var(--font-display);
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0,0,0,.18);
+  text-shadow: 0 1px 2px rgba(0,0,0,.15);
 }
-.mono-lg { width: 56px; height: 56px; font-size: 26px; border-radius: 16px; }
+.mono-lg { width: 56px; height: 56px; font-size: 26px; border-radius: 18px; }
 .mono-md { width: 44px; height: 44px; font-size: 21px; }
-.mono-sm { width: 36px; height: 36px; font-size: 17px; border-radius: 10px; }
-.m-spring { background: linear-gradient(145deg, #4A8663 0%, var(--spring-deep) 100%); }
-.m-summer { background: linear-gradient(145deg, #C05A42 0%, var(--summer-deep) 100%); }
-.m-autumn { background: linear-gradient(145deg, #A9752A 0%, var(--autumn-deep) 100%); }
-.m-winter { background: linear-gradient(145deg, #3D5A7E 0%, var(--accent-deep) 100%); }
+.mono-sm { width: 36px; height: 36px; font-size: 17px; border-radius: 12px; }
+.m-spring { background: linear-gradient(145deg, #3FAE74 0%, #2B8A50 100%); box-shadow: 0 4px 12px rgba(46,140,85,.35); }
+.m-summer { background: linear-gradient(145deg, #E86A3F 0%, #C74A2A 100%); box-shadow: 0 4px 12px rgba(193,79,50,.32); }
+.m-autumn { background: linear-gradient(145deg, #E79E22 0%, #B97A12 100%); box-shadow: 0 4px 12px rgba(183,121,26,.35); }
+.m-winter { background: linear-gradient(145deg, #4C9AD2 0%, #2E6E96 100%); box-shadow: 0 4px 12px rgba(53,117,159,.4); }
 
-/* 菜品封面横幅（列表卡顶部） */
-.cover-art {
-  position: relative;
-  height: 88px;
-  border-radius: var(--r-m) var(--r-m) 0 0;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 0 var(--s4);
-}
-.cover-art::before {           /* 纹样弧线（装饰） */
-  content: "";
-  position: absolute;
-  right: -34px; top: -46px;
-  width: 150px; height: 150px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.22);
-}
-.cover-art::after {
-  content: "";
-  position: absolute;
-  right: -12px; top: -24px;
-  width: 150px; height: 150px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.14);
-}
-.cover-art h3 {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,.22);
-}
-.cover-art .cover-sub {
-  margin-left: auto;
-  text-align: right;
+/* 活力贴纸（明底墨字，斜贴） */
+.sticker {
+  display: inline-block;
   font-size: 12px;
-  line-height: 1.5;
-  color: rgba(255,255,255,.85);
+  font-weight: 800;
+  color: var(--ink);
+  background: linear-gradient(150deg, #FFD871 0%, var(--amber) 130%);
+  border-radius: 8px;
+  padding: 5px 9px;
+  transform: rotate(-4deg);
+  box-shadow: 0 3px 8px rgba(169,108,16,.28);
 }
-.c-winter { background: linear-gradient(120deg, #3D5A7E 0%, var(--accent-deep) 78%); }
-.c-autumn { background: linear-gradient(120deg, #A9752A 0%, var(--autumn-deep) 78%); }
-.c-spring { background: linear-gradient(120deg, #4A8663 0%, var(--spring-deep) 78%); }
-.c-summer { background: linear-gradient(120deg, #C05A42 0%, var(--summer-deep) 78%); }
+.sticker.green { background: linear-gradient(150deg, #7CD9A2 0%, #3DA46C 130%); box-shadow: 0 3px 8px rgba(46,140,85,.28); }
+.sticker.blue  { background: linear-gradient(150deg, #8CC5EC 0%, #4E93C4 130%); box-shadow: 0 3px 8px rgba(58,124,168,.28); }
 
-/* 花饰分隔（详页区块间） */
-.orn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: var(--s4) var(--s5) 0;
+/* 手绘涂鸦：sparkle（漂浮）+ squiggle（波浪线） */
+.sparkle { animation: float 3.2s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
 }
-.orn::before, .orn::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line-strong) 30% 70%, transparent);
+@media (prefers-reduced-motion: reduce) {
+  .sparkle { animation: none; }
 }
-.orn i {
-  flex: none;
-  width: 6px; height: 6px;
-  background: var(--accent);
-  transform: rotate(45deg);
-  opacity: .55;
+
+/* 粉彩渐变面板（v1.2 封面：明底墨字） */
+.panel-pop {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(240px 160px at 88% 0%, rgba(255,255,255,.75), transparent 65%),
+    linear-gradient(135deg, #E8F3FC 0%, #E0F2E9 55%, #FFF6E2 100%);
 }
+.panel-pop.winter  { background: radial-gradient(240px 160px at 88% 0%, rgba(255,255,255,.8), transparent 65%), linear-gradient(135deg, #E4F1FB 0%, #DFF0E9 55%, #FFF6E2 100%); }
+.panel-pop.spring  { background: linear-gradient(135deg, #E3F5EA 0%, #F0F7DF 55%, #FFF6E2 100%); }
+.panel-pop.autumn  { background: linear-gradient(135deg, #FBF0DA 0%, #FDEBDC 55%, #FFF6E2 100%); }
+.panel-pop.summer  { background: linear-gradient(135deg, #FBE7DF 0%, #FDF0DC 55%, #FFF6E2 100%); }
 
 /* ---------- 通用元件 ---------- */
 .page-pad { padding: 0 var(--s5); }
@@ -316,7 +292,7 @@ body {
   width: 5px; height: 5px;
   background: var(--seal);
   transform: rotate(45deg);
-  opacity: .8;
+  opacity: .85;
 }
 .section-head .more {
   font-size: 13px;
@@ -325,9 +301,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 8px 0 8px 8px;      /* 文字小但热区足够 */
+  padding: 8px 0 8px 8px;
 }
-.section-head .more:active { color: var(--accent); }
+.section-head .more:active { color: var(--accent-deep); }
 
 .card {
   background: var(--surface);
@@ -388,8 +364,8 @@ body {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-  font-weight: 600;
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 32%, transparent);
+  font-weight: 700;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 38%, transparent);
 }
 
 /* 节气 Tag（淡季底 + 深季字） */
@@ -399,12 +375,12 @@ body {
   line-height: 1;
   padding: 5px 8px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .term-spring { background: var(--spring-soft); color: var(--spring-deep); }
 .term-summer { background: var(--summer-soft); color: var(--summer-deep); }
 .term-autumn { background: var(--autumn-soft); color: var(--autumn-deep); }
-.term-winter { background: var(--winter-soft); color: var(--accent-deep); }
+.term-winter { background: var(--winter-soft); color: var(--winter-deep); }
 
 /* 四气徽章 / 五味 chip */
 .nature-badge {
@@ -469,9 +445,9 @@ body {
 }
 .btn:active { transform: scale(.97); }
 .btn-primary {
-  background: linear-gradient(135deg, #3D5A7E 0%, var(--accent-deep) 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
   color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 38%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 42%, transparent);
 }
 .btn-ghost { background: var(--surface); border-color: var(--line-strong); color: var(--ink); }
 
@@ -521,7 +497,7 @@ body {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-.quote-card::before {         /* 引字水印（装饰） */
+.quote-card::before {
   content: "引";
   position: absolute;
   left: 10px; top: 10px;
@@ -563,7 +539,7 @@ body {
   bottom: 2px;
   width: 1.5px;
   background: linear-gradient(180deg, var(--accent) 0%, var(--line) 100%);
-  opacity: .5;
+  opacity: .55;
 }
 .step:last-child { padding-bottom: 0; }
 .step:last-child::before { display: none; }
@@ -578,7 +554,7 @@ body {
   display: grid;
   place-items: center;
   margin-top: 2px;
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 38%, transparent);
 }
 .step p { font-size: 15px; line-height: 1.7; color: var(--ink); }
 .step .tip {
@@ -594,8 +570,8 @@ body {
   gap: var(--s3);
   padding: var(--s4);
   border-radius: var(--r-m);
-  background: linear-gradient(150deg, #F9F0E0 0%, var(--warning-soft) 60%);
-  border: 1px solid color-mix(in srgb, var(--warning) 28%, transparent);
+  background: linear-gradient(150deg, #FDF3DF 0%, var(--warning-soft) 60%);
+  border: 1px solid color-mix(in srgb, var(--warning) 26%, transparent);
 }
 .notice-card svg { flex: none; color: var(--warning); margin-top: 2px; }
 .notice-card h3 { font-size: 15px; font-weight: 700; color: var(--warning); }

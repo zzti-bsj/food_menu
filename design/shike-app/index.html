@@ -59,7 +59,7 @@
 <main class="gallery">
   <header class="g-head">
     <h1>食刻 App · 页面设计</h1>
-    <span class="ver">v1.1 · 2026-11-06 · Android / iOS</span>
+    <span class="ver">v1.2 · 2026-11-10 · Android / iOS</span>
   </header>
   <p class="g-sub">
     二十四节气 × 顺时饮食。基于现有数据层（食材/菜品档案、节气词表、±2 当令推荐口径）设计的一套 C 端移动页面。
@@ -68,22 +68,22 @@
 
   <div class="spec">
     <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      <span class="sw" style="background:#37714A"></span>春 · 青
+      <span class="sw" style="background:#2E8C55"></span>春 · 青
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      <span class="sw" style="background:#B5432C"></span>夏 · 朱
+      <span class="sw" style="background:#C14F32"></span>夏 · 朱
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      <span class="sw" style="background:#8A5D15"></span>秋 · 赭
+      <span class="sw" style="background:#B7791A"></span>秋 · 琥珀
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      <span class="sw" style="background:#2E4A66"></span>冬 · 黛（当前季）
+      <span class="sw" style="background:#35759F"></span>冬 · 青蓝（当前季）
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      宣纸底 #F6F2E9 · 墨字 #26231C
+      亮纸底 #FAF6ED · 墨字 #26231C · 粉彩渐变面板
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
-      朱砂印章 · 食签牌 · 封面级 Hero · 悬浮 Dock
+      朱砂印章 · 食签牌彩影 · 贴纸 · 星光涂鸦 · 悬浮 Dock
     </span>
     <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
       思源宋（展示）× 苹方/思源黑（正文）
@@ -139,11 +139,53 @@
         <figcaption><b>我的</b><span>本地偏好 · 节气提醒 · 数据说明</span></figcaption>
       </figure>
     </a>
+
+    <a class="shot" href="workshop.html">
+      <figure>
+        <div class="frame"><iframe src="workshop.html" title="工坊首页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>工坊</b><span>流水线入口 · 最近批次 · 审核待办</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="pipeline.html">
+      <figure>
+        <div class="frame"><iframe src="pipeline.html" title="食材流水线预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>食材流水线</b><span>节气补货 · 五步进度 · 入库/存疑/失败</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="dish-generate.html">
+      <figure>
+        <div class="frame"><iframe src="dish-generate.html" title="菜品生成预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>菜品生成</b><span>候选池 · 弃置原因 · 三态判定 · 修订轮</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="review.html">
+      <figure>
+        <div class="frame"><iframe src="review.html" title="审核台预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>审核台</b><span>三态计数 · 食材/菜品分段 · 队列分页</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="review-dish.html">
+      <figure>
+        <div class="frame"><iframe src="review-dish.html" title="菜品审核预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>菜品审核</b><span>全字段 · 存疑备注 · 通过/驳回</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="review-ingredient.html">
+      <figure>
+        <div class="frame"><iframe src="review-ingredient.html" title="食材审核预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>食材审核</b><span>值域校验 · 全字段 · 通过/驳回</span></figcaption>
+      </figure>
+    </a>
   </div>
 
   <footer class="g-foot">
-    导航结构：一级 4 Tab（今日 / 菜谱 / 食材 / 我的）；全年节气、菜品详情、食材详情为二级 push 页。
-    示例数据（食材档案、菜谱、典籍引文）为设计占位，值域对齐词表但未经考据审定。
+    导航结构：一级 5 Tab（今日 / 菜谱 / 食材 / 工坊 / 我的）；全年节气、菜品/食材详情、工坊流水线与审核页为二级 push 页。
+    食材插画为手绘 SVG 示例（与档案无逐一对应关系）；其余示例数据（菜谱、典籍引文、审核队列）为设计占位，值域对齐词表与真实 API，未经考据审定。
   </footer>
 </main>
 </body>

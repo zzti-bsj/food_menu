@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 菜品审核</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（菜品审核详情：全字段 + 三态操作）—— */
+  .review-cover {
+    margin: var(--s2) var(--s5) 0;
+    border-radius: var(--r-l);
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow: var(--shadow-card);
+    padding: var(--s5);
+    position: relative;
+    overflow: hidden;
+  }
+  .review-cover h1 {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 600; letter-spacing: 2px;
+    color: var(--ink);
+  }
+  .review-cover .r-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
+  .r-chip {
+    font-size: 12px; font-weight: 700;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px; padding: 5px 8px;
+    color: var(--ink-2);
+  }
+  .r-chip.chef { background: var(--seal); border-color: var(--seal); color: #fff; }
+  .r-chip.status { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent); color: var(--accent-deep); }
+
+  /* 存疑备注（remark 落库字段） */
+  .remark-card {
+    display: flex; gap: var(--s3);
+    padding: var(--s4);
+    border-radius: var(--r-m);
+    background: linear-gradient(150deg, #FDF3DF 0%, var(--warning-soft) 60%);
+    border: 1px solid color-mix(in srgb, var(--warning) 26%, transparent);
+  }
+  .remark-card svg { flex: none; color: var(--warning); margin-top: 2px; }
+  .remark-card h3 { font-size: 14px; font-weight: 700; color: var(--warning); }
+  .remark-card ol { margin: 6px 0 0 1.2em; font-size: 13px; line-height: 1.8; color: var(--ink-2); }
+
+  /* 字段卡 */
+  .f-card { padding: var(--s2) var(--s4); }
+  .f-row {
+    display: flex; align-items: flex-start; gap: var(--s3);
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14px;
+  }
+  .f-row:last-child { border-bottom: none; }
+  .f-row .k {
+    flex: none; width: 72px;
+    font-size: 13px; font-weight: 700;
+    color: var(--ink-3);
+    padding-top: 2px;
+  }
+  .f-row .v { flex: 1; min-width: 0; line-height: 1.7; }
+  .f-row .v .muted { color: var(--ink-2); }
+  .f-steps { display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.7; color: var(--ink); }
+  .f-steps b { color: var(--accent-deep); margin-right: 4px; }
+
+  /* 吸底操作栏 */
+  .act-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; gap: var(--s3);
+    padding: var(--s3) var(--s5) calc(40px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+  }
+  .act-bar .btn { flex: 1; height: 46px; font-size: 15px; }
+  .btn-danger {
+    background: var(--danger-soft);
+    border: 1.5px solid color-mix(in srgb, var(--danger) 45%, transparent);
+    color: var(--danger);
+  }
+  .hint { margin: var(--s4) var(--s5) 0; font-size: 13px; line-height: 1.7; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar" style="padding-bottom:130px">
+    <header class="nav-header">
+      <a class="icon-btn" href="review.html" aria-label="返回审核台">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <span style="font-size:13px;color:var(--ink-3)">菜品审核 · #1042</span>
+    </header>
+
+    <section class="review-cover panel-pop winter" aria-labelledby="rv-name">
+      <h1 id="rv-name">白萝卜炖鸡汤</h1>
+      <div class="r-chips">
+        <span class="r-chip chef">健康厨师</span>
+        <span class="r-chip">家常 · 炖</span>
+        <span class="r-chip"><svg width="12" height="12" style="vertical-align:-1px" aria-hidden="true"><use href="#i-flame"/></svg> 约350千卡/份</span>
+        <span class="r-chip status">待审核 · 核验 pass</span>
+      </div>
+    </section>
+
+    <!-- 存疑备注（remark，核验存疑时落库） -->
+    <section class="section" aria-labelledby="rv-remark" style="margin-top:var(--s4)">
+      <div class="page-pad">
+        <div class="remark-card">
+          <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div>
+            <h3>核验存疑 · 已写入备注（remark）</h3>
+            <ol>
+              <li>白萝卜性凉，与「冬补」定位略有张力，已用甘温鸡肉平衡，建议确认表述。</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 全字段 -->
+    <section class="section" aria-labelledby="rv-fields">
+      <div class="section-head"><h2 id="rv-fields">档案字段</h2></div>
+      <div class="page-pad">
+        <div class="card f-card">
+          <div class="f-row">
+            <span class="k">主料定量</span>
+            <div class="v">白萝卜 半根 · 鸡腿肉（去皮）1块 <span class="muted">（每份）</span></div>
+          </div>
+          <div class="f-row">
+            <span class="k">辅料调料</span>
+            <div class="v">姜 3片 · 枸杞 10粒 · 盐 2g · 生抽 5ml · 小葱 1根</div>
+          </div>
+          <div class="f-row">
+            <span class="k">时令节气</span>
+            <div class="v">立冬 · 小雪 <span class="muted">（按节气序升序 ✓）</span></div>
+          </div>
+          <div class="f-row">
+            <span class="k">养生好处</span>
+            <div class="v muted">白萝卜性凉味甘辛，降气化痰、消食导滞；鸡肉甘温，温中益气。萝卜得肉润而不过寒，冬食顺气不腻。</div>
+          </div>
+          <div class="f-row">
+            <span class="k">忌口提示</span>
+            <div class="v muted">脾胃虚寒、易腹泻者少食；痛风急性期慎饮浓汤。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 步骤 -->
+    <section class="section" aria-labelledby="rv-steps">
+      <div class="section-head"><h2 id="rv-steps">制作步骤 · 技巧入步骤</h2></div>
+      <div class="page-pad">
+        <div class="card f-card">
+          <div class="f-steps">
+            <span><b>1.</b>鸡腿肉切4厘米块，冷水下锅加姜片，煮出浮沫即捞出，温水冲净。</span>
+            <span><b>2.</b>白萝卜削皮切滚刀块（约3厘米）。</span>
+            <span><b>3.</b>砂锅一次加足热水，烧开转小火加盖慢炖20分钟。</span>
+            <span><b>4.</b>下萝卜续炖15分钟，至筷子可轻松插入。</span>
+            <span><b>5.</b>关火前加盐、生抽，下枸杞焖3分钟，撒葱花。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="hint">示例数据 · 通过/驳回分别调用 POST /api/dish/status（status=已通过/已驳回）；驳回后可回工坊带反馈重新生成。</p>
+  </div>
+
+  <!-- 吸底三态操作 -->
+  <div class="act-bar">
+    <button class="btn btn-danger" type="button">驳回</button>
+    <button class="btn btn-primary" type="button">
+      <svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg>
+      通过
+    </button>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

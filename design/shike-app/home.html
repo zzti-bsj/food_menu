@@ -6,7 +6,7 @@
 <title>食刻 · 今日</title>
 <link rel="stylesheet" href="assets/theme.css">
 <style>
-  /* —— 页面级样式（今日页 v1.1）—— */
+  /* —— 页面级样式（今日页 v1.2 青春活力）—— */
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 
   .date-row {
@@ -15,88 +15,75 @@
     font-size:13px; color: var(--ink-3);
   }
 
-  /* 节气 Hero：封面级深黛卡 */
+  /* 节气 Hero：粉彩明快面板 */
   .hero {
     margin: var(--s3) var(--s5) 0;
     border-radius: var(--r-l);
-    background: linear-gradient(150deg, #3D5A7E 0%, #2E4A66 46%, var(--accent-deep) 100%);
-    box-shadow: 0 4px 12px rgba(34,58,82,.28), 0 18px 44px rgba(34,58,82,.34);
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow: var(--shadow-card);
     padding: var(--s5);
     position: relative;
     overflow: hidden;
-    color: #fff;
   }
-  /* 远山剪影（装饰） */
   .hero .hills { position:absolute; left:0; right:0; bottom:0; pointer-events:none; }
-  /* 云弧（装饰） */
-  .hero::before {
-    content:"";
-    position:absolute; right:-58px; top:-58px;
-    width:190px; height:190px; border-radius:50%;
-    border:1.5px solid rgba(255,255,255,.18);
-  }
-  .hero::after {
-    content:"";
-    position:absolute; right:-30px; top:-30px;
-    width:190px; height:190px; border-radius:50%;
-    border:1.5px solid rgba(255,255,255,.10);
-  }
   .hero .meta {
     display:flex; align-items:center; gap:8px;
-    font-size:13px; letter-spacing:1px; color: rgba(255,255,255,.78);
+    font-size:13px; letter-spacing:1px; color: var(--ink-2);
   }
-  .hero .meta .seal { width:26px; height:26px; font-size:13px; border-radius:5px; }
+  .hero .meta .seal { width:26px; height:26px; font-size:13px; }
+  .hero .deco { position:absolute; right:18px; top:14px; display:flex; gap:10px; align-items:flex-start; }
   .hero-body { display:flex; align-items:stretch; justify-content:space-between; gap: var(--s3); margin-top: var(--s2); }
   .hero h2 {
     font-family: var(--font-display);
     font-size:66px; line-height:1.15; font-weight:600;
     letter-spacing:7px;
-    text-shadow: 0 2px 10px rgba(0,0,0,.22);
+    color: var(--ink);
   }
   .hero .verse {
     writing-mode: vertical-rl;
     font-family: var(--font-display);
     font-size:14px; letter-spacing:7px;
-    color: rgba(255,255,255,.82);
+    color: var(--ink-2);
     padding-top: 10px;
   }
   .enter-chip {
     display:inline-flex; align-items:center; gap:6px;
     margin-top: var(--s3);
-    font-size:13px; font-weight:600;
-    color: #fff;
-    background: rgba(255,255,255,.16);
-    border:1px solid rgba(255,255,255,.30);
+    font-size:13px; font-weight:700;
+    color: var(--accent-deep);
+    background: var(--surface);
+    border:1.5px solid color-mix(in srgb, var(--accent) 45%, transparent);
     border-radius:999px; padding:7px 12px;
-    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(58,124,168,.15);
   }
   .term-strip { margin-top: var(--s4); }
-  .term-strip .label { font-size:13px; color: rgba(255,255,255,.72); margin-bottom: var(--s2); }
+  .term-strip .label { font-size:13px; color: var(--ink-3); margin-bottom: var(--s2); }
   .term-strip .dots { display:flex; gap: var(--s2); flex-wrap:wrap; }
   .term-strip .dot {
     font-size:13px; font-weight:600; padding:7px 12px; border-radius:999px;
-    border:1px solid rgba(255,255,255,.30); color:#fff;
-    background: rgba(255,255,255,.10);
+    border:1px solid var(--line-strong); color: var(--ink-2);
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(38,35,28,.06);
   }
   .term-strip .dot.now {
-    background:#fff; border-color:#fff;
-    color: var(--accent-deep);
-    box-shadow: 0 3px 10px rgba(0,0,0,.22);
+    background: var(--accent); border-color: var(--accent);
+    color:#fff; font-weight:700;
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 40%, transparent);
   }
   .hero-foot {
     display:flex; justify-content:space-between; align-items:center;
     margin-top: var(--s4); padding-top: var(--s3);
-    border-top: 1px dashed rgba(255,255,255,.28);
+    border-top: 1px dashed var(--line-strong);
   }
-  .hero-foot .motto { font-size:13px; color: rgba(255,255,255,.72); }
+  .hero-foot .motto { font-size:13px; color: var(--ink-3); }
   .hero-foot a {
     display:inline-flex; align-items:center; gap:4px;
-    font-size:13px; color:#fff; text-decoration:none; font-weight:700;
+    font-size:13px; color: var(--accent-deep); text-decoration:none; font-weight:700;
     padding:8px 0 8px 8px;
   }
   .hero-foot a:active { opacity:.8; }
 
-  /* 当令食材横滑卡（食签牌版） */
+  /* 当令食材横滑卡 */
   .hscroll {
     display:flex; gap: var(--s3);
     overflow-x:auto; padding: 2px var(--s5) var(--s2);
@@ -116,15 +103,25 @@
     transition: transform 100ms var(--ease), box-shadow var(--dur) var(--ease);
     display:flex; flex-direction:column; gap:10px;
   }
-  .ing-card:active { transform: scale(.97); box-shadow: var(--shadow-lift); }
+  .ing-card:active { transform: scale(.97) rotate(-1deg); box-shadow: var(--shadow-lift); }
   .ing-card h3 { font-family: var(--font-display); font-size:18px; font-weight:600; letter-spacing:1px; }
   .ing-card .ben { font-size:13px; line-height:1.6; color: var(--ink-3); }
   .ing-card .badges { display:flex; gap:6px; flex-wrap:wrap; }
   .ing-card .head { display:flex; align-items:center; gap:10px; }
+  /* 迷你插画圆盘 */
+  .mini-disc {
+    width: 48px; height: 48px; flex: none;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    box-shadow: inset 0 -2px 0 rgba(38,35,28,.05), 0 2px 5px rgba(38,35,28,.07);
+  }
+  .md-winter { background: radial-gradient(circle at 30% 25%, #F0F7FD 0%, #D9EAF7 100%); }
+  .md-spring { background: radial-gradient(circle at 30% 25%, #EDF8EE 0%, #D8EFDD 100%); }
+  .md-autumn { background: radial-gradient(circle at 30% 25%, #FDF6E6 0%, #F7EAD0 100%); }
 
-  /* 菜谱列表（带签牌） */
+  /* 菜谱列表 */
   .dish-list { display:flex; flex-direction:column; gap: var(--s3); padding: 0 var(--s5); }
-  .dish-row .top { display:flex; align-items:center; gap: var(--s2); }
+  .dish-row .top { display:flex; align-items:center; gap: var(--s2); flex-wrap:wrap; }
   .style-tag {
     font-size:12px; color: var(--ink-2);
     border:1px solid var(--line-strong); border-radius:6px; padding:4px 7px;
@@ -134,7 +131,7 @@
 </head>
 <body>
 
-<!-- 图标 Sprite（线性 1.8px，统一 currentColor） -->
+<!-- 图标 Sprite -->
 <svg style="display:none" aria-hidden="true">
   <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
@@ -144,6 +141,55 @@
   <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
   <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-tools" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5.2L4.9 17.4A2 2 0 0 0 6.7 20h10.6a2 2 0 0 0 1.8-2.6L14 8.2V3"/><path d="M7.5 13h9"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.3a2 2 0 0 0 1.5 1.5L22 12l-6.3 2.2a2 2 0 0 0-1.5 1.5L12 22l-2.2-6.3a2 2 0 0 0-1.5-1.5L2 12l6.3-2.2a2 2 0 0 0 1.5-1.5L12 2z"/></symbol>
+
+  <!-- 手绘食材插画（扁平风 48×48） -->
+  <symbol id="f-radish" viewBox="0 0 48 48">
+    <path d="M24 45c-1.8-2.5-2.4-4.5-2-7" fill="none" stroke="#E8DCC3" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M24 8c-3.5-3-8-3.6-11.5-1.5 1.2 3.6 4.4 6.3 8.5 6.9z" fill="#3B8A56"/>
+    <path d="M24 8c3.5-3 8-3.6 11.5-1.5-1.2 3.6-4.4 6.3-8.5 6.9z" fill="#4FA06B"/>
+    <path d="M24 41c-8.3 0-14-6-14-13.2C10 19.4 16 13 24 13s14 6.4 14 14.8C38 35 32.3 41 24 41z" fill="#F5F2E8"/>
+    <path d="M13.5 25.5c2.5-1 5.5-1 8 .3M26.5 26c2.5-1.3 5.5-1.4 8-.4" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M24 41c-1.6-3.2-1.6-6.5 0-9.8" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="f-yam" viewBox="0 0 48 48">
+    <path d="M22 5c4.5 0 8 3.6 8 8l-1 21c-.2 4.6-3.2 8-7 8s-6.8-3.4-7-8L14 13c0-4.4 3.5-8 8-8z" fill="#CBA266"/>
+    <path d="M15.1 22c4.5 1.4 9.3 1.4 13.8 0M15.5 28c4.3 1.2 8.7 1.2 13 0" fill="none" stroke="#B08A4F" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M19 40.5c-1.5-1-2.2-2.3-2.2-4M26 41.5c1.6-1 2.4-2.4 2.4-4.2" fill="none" stroke="#A87F46" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M22 5c1.8 3.6 1.8 7 0 10" fill="none" stroke="#B98F55" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="f-lotus" viewBox="0 0 48 48">
+    <path d="M6 20c0-4.4 3.6-8 8-8h6v24h-6c-4.4 0-8-3.6-8-8z" fill="#EFE9DA"/>
+    <path d="M22 12h9c6.1 0 11 4.6 11 10.3v3.4C42 31.4 37.1 36 31 36h-9z" fill="#E6DFCB"/>
+    <circle cx="12" cy="24" r="3" fill="#FAF6ED"/>
+    <circle cx="27" cy="19" r="3" fill="#FAF6ED"/>
+    <circle cx="33" cy="28" r="3" fill="#FAF6ED"/>
+    <circle cx="27" cy="29" r="3" fill="#FAF6ED"/>
+    <path d="M22 12v24" stroke="#D8D0B8" stroke-width="1.6"/>
+    <path d="M10 14.5c-1.5 1.5-2.4 3-2.8 4.8M38 33.5c1.5-1.6 2.4-3.2 2.8-5" fill="none" stroke="#CBD3B9" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="f-pear" viewBox="0 0 48 48">
+    <path d="M24 7c1 3.4-.3 5.6-1.6 7.6-1.8 2.8-4.9 5-4.9 10.4 0 7.2 2.9 12.5 6.5 12.5s6.5-5.3 6.5-12.5c0-5.4-3.1-7.6-4.9-10.4C24.3 12.6 23 10.4 24 7z" fill="#F0CE62"/>
+    <path d="M22 30c.4 4 1.6 6.6 3.4 7.4-2.9.6-5.4-1.8-6.5-5.6-.7-2.4-.9-4.6-.7-6.5.8 1.4 3.2 1.7 3.8 4.7z" fill="#E4BC4A" opacity=".85"/>
+    <path d="M24 8.5c1.8-2.2 4-3 6.5-2.2" fill="none" stroke="#8C6B3E" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M30 7c3.2.4 5.4 2 6.2 4.6-2.9 1.2-5.9.3-7.6-2.2-.3-1.2-.2-2 .6-2.6z" fill="#4FA06B"/>
+    <circle cx="20.5" cy="26" r="2.6" fill="#F7E394" opacity=".9"/>
+  </symbol>
+  <symbol id="f-lily" viewBox="0 0 48 48">
+    <path d="M24 12c4 0 7 2.6 7.6 6.2 2.9.6 5 2.8 5 5.6 0 1.2-.4 2.4-1.2 3.4 1.5 1.1 2.4 2.7 2.4 4.4 0 3.3-3.1 5.9-7 5.9h-13.6c-3.9 0-7-2.6-7-5.9 0-1.7.9-3.3 2.4-4.4-.8-1-1.2-2.2-1.2-3.4 0-2.8 2.1-5 5-5.6C17 14.6 20 12 24 12z" fill="#F6F2E6"/>
+    <path d="M24 37V17M24 24c-2.4-1.4-5.2-1.6-8-.8M24 24c2.4-1.4 5.2-1.6 8-.8M24 30c-2.9-1.2-6-1.3-9-.3M24 30c2.9-1.2 6-1.3 9-.3" fill="none" stroke="#E4DDC6" stroke-width="1.7" stroke-linecap="round"/>
+    <path d="M19 40.5c1.6-1.2 3.2-1.8 5-1.8s3.4.6 5 1.8" fill="none" stroke="#D9D0B4" stroke-width="1.7" stroke-linecap="round"/>
+    <path d="M24 12c-.5-2.3.2-4.2 2-5.6" fill="none" stroke="#B9AE87" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="f-chestnut" viewBox="0 0 48 48">
+    <path d="M24 9c8.8 0 15 6.8 15 15.4 0 6.3-3 11.3-7.4 13.6H16.4C12 35.7 9 30.7 9 24.4 9 15.8 15.2 9 24 9z" fill="#A5693B"/>
+    <path d="M16.4 38c-1.2-6.8.3-14.3 4.6-20.5 1.6 6.7 1.6 13.9 0 20.5z" fill="#C99A6A" opacity=".7"/>
+    <path d="M24 9c.6 4-.4 7.6-2.9 10.8" fill="none" stroke="#8F5A2E" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M20.5 5.5c1.2-1.6 3-2.4 5.2-2.3.4 2.3-.6 4.1-2.8 5.2-1.3-.6-2.1-1.6-2.4-2.9z" fill="#4FA06B"/>
+    <ellipse cx="18.5" cy="20" rx="2.4" ry="3.6" fill="#BE7F4C" opacity=".8" transform="rotate(-18 18.5 20)"/>
+  </symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.3a2 2 0 0 0 1.5 1.5L22 12l-6.3 2.2a2 2 0 0 0-1.5 1.5L12 22l-2.2-6.3a2 2 0 0 0-1.5-1.5L2 12l6.3-2.2a2 2 0 0 0 1.5-1.5L12 2z"/></symbol>
 </svg>
 
 <div class="phone">
@@ -161,24 +207,28 @@
     <h1 class="sr-only">食刻 · 今日</h1>
 
     <div class="date-row">
-      <span>2026年11月7日 · 星期六</span>
+      <span>2026年11月10日 · 星期二</span>
       <span>宜食 · 温润</span>
     </div>
 
-    <!-- 节气 Hero（封面级） -->
-    <section class="hero" aria-labelledby="hero-term">
-      <svg class="hills" width="100%" height="72" viewBox="0 0 350 72" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 72 L0 46 Q60 18 128 44 Q200 70 258 38 Q308 12 350 40 L350 72 Z" fill="rgba(255,255,255,.07)"/>
-        <path d="M0 72 L0 58 Q80 34 160 56 Q250 80 310 52 Q335 40 350 50 L350 72 Z" fill="rgba(255,255,255,.10)"/>
+    <!-- 节气 Hero（粉彩明快） -->
+    <section class="hero panel-pop winter" aria-labelledby="hero-term">
+      <svg class="hills" width="100%" height="66" viewBox="0 0 350 66" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 66 L0 44 Q60 16 128 42 Q200 66 258 36 Q308 10 350 38 L350 66 Z" fill="rgba(95,168,220,.16)"/>
+        <path d="M0 66 L0 56 Q80 32 160 54 Q250 76 310 50 Q335 38 350 48 L350 66 Z" fill="rgba(61,166,116,.14)"/>
       </svg>
       <p class="meta"><span class="seal" aria-hidden="true">食</span>二十四节气 · 第 19 · 冬</p>
+      <div class="deco" aria-hidden="true">
+        <svg class="sparkle" width="22" height="22" viewBox="0 0 24 24" style="color:var(--amber)"><use href="#i-spark"/></svg>
+        <svg class="sparkle" width="14" height="14" viewBox="0 0 24 24" style="color:#3DA46C;animation-delay:.8s"><use href="#i-spark"/></svg>
+      </div>
       <div class="hero-body">
         <h2 id="hero-term">立冬</h2>
         <p class="verse">冬之始 · 万物收藏</p>
       </div>
       <span class="enter-chip">
         <svg width="16" height="16" aria-hidden="true"><use href="#i-calendar"/></svg>
-        明日 06:04 入节
+        立冬进行中 · 11月7日已入节
       </span>
       <div class="term-strip">
         <p class="label">当令推荐范围 · 当前节气 ±2</p>
@@ -205,7 +255,7 @@
       <div class="hscroll">
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-winter" aria-hidden="true">白</span>
+            <span class="mini-disc md-winter"><svg width="34" height="34" aria-hidden="true"><use href="#f-radish"/></svg></span>
             <h3>白萝卜</h3>
           </div>
           <div class="badges">
@@ -216,7 +266,7 @@
         </a>
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-autumn" aria-hidden="true">山</span>
+            <span class="mini-disc md-autumn"><svg width="34" height="34" aria-hidden="true"><use href="#f-yam"/></svg></span>
             <h3>山药</h3>
           </div>
           <div class="badges">
@@ -227,7 +277,7 @@
         </a>
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-winter" aria-hidden="true">藕</span>
+            <span class="mini-disc md-winter"><svg width="34" height="34" aria-hidden="true"><use href="#f-lotus"/></svg></span>
             <h3>莲藕</h3>
           </div>
           <div class="badges">
@@ -238,7 +288,7 @@
         </a>
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-spring" aria-hidden="true">梨</span>
+            <span class="mini-disc md-spring"><svg width="34" height="34" aria-hidden="true"><use href="#f-pear"/></svg></span>
             <h3>雪梨</h3>
           </div>
           <div class="badges">
@@ -249,7 +299,7 @@
         </a>
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-spring" aria-hidden="true">百</span>
+            <span class="mini-disc md-spring"><svg width="34" height="34" aria-hidden="true"><use href="#f-lily"/></svg></span>
             <h3>百合</h3>
           </div>
           <div class="badges">
@@ -260,7 +310,7 @@
         </a>
         <a class="ing-card" href="ingredient-detail.html">
           <div class="head">
-            <span class="mono mono-md m-autumn" aria-hidden="true">栗</span>
+            <span class="mini-disc md-autumn"><svg width="34" height="34" aria-hidden="true"><use href="#f-chestnut"/></svg></span>
             <h3>板栗</h3>
           </div>
           <div class="badges">
@@ -291,6 +341,7 @@
               <span class="kcal"><svg width="13" height="13" aria-hidden="true"><use href="#i-flame"/></svg>约350千卡/份</span>
               <span class="term-tag term-winter">立冬</span>
               <span class="term-tag term-winter">小雪</span>
+              <span class="sticker green">低卡优选</span>
             </div>
           </div>
           <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
@@ -340,6 +391,9 @@
     </a>
     <a href="ingredients.html">
       <svg width="24" height="24" aria-hidden="true"><use href="#i-leaf"/></svg><span>食材</span>
+    </a>
+    <a href="workshop.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-tools"/></svg><span>工坊</span>
     </a>
     <a href="mine.html">
       <svg width="24" height="24" aria-hidden="true"><use href="#i-user"/></svg><span>我的</span>
