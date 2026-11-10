@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 食材</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（食材百科页 v1.1）—— */
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 600; letter-spacing: 2px;
+    padding: var(--s2) var(--s5) var(--s3);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .page-title .seal { width: 30px; height: 30px; font-size: 15px; }
+
+  .filter-label {
+    padding: 0 var(--s5);
+    font-size: 13px; color: var(--ink-3);
+    margin: var(--s2) 0 2px;
+  }
+
+  /* 只看当令 */
+  .term-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: var(--s3) var(--s5) 0;
+    padding: 12px var(--s4);
+    background: linear-gradient(150deg, var(--winter-soft) 0%, var(--surface) 62%);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--shadow-card);
+  }
+  .term-toggle .tt-label { font-size: 15px; font-weight: 700; }
+  .term-toggle .tt-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+  .switch { position: relative; display: inline-block; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: var(--line-strong); border-radius: 999px;
+    transition: background var(--dur) var(--ease);
+  }
+  .switch .track::after {
+    content: "";
+    position: absolute; top: 2px; left: 2px;
+    width: 27px; height: 27px; border-radius: 999px;
+    background: #fff; box-shadow: 0 1px 3px rgba(38,35,28,.25);
+    transition: transform var(--dur) var(--ease);
+  }
+  .switch input:checked + .track { background: var(--success); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .ing-list { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s4) var(--s5) 0; }
+  .ing-list .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+  .alias { font-size: 13px; color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+
+  .result-line {
+    padding: var(--s4) var(--s5) 0;
+    font-size: 13px; color: var(--ink-3);
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen">
+    <h1 class="page-title"><span class="seal" aria-hidden="true">材</span>食材</h1>
+
+    <div class="page-pad">
+      <div class="searchbar">
+        <svg width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg>
+        <input type="search" placeholder="搜索食材或别名，如：芦菔" aria-label="搜索食材">
+      </div>
+    </div>
+
+    <!-- 分类筛选（词表 15 大类取常用） -->
+    <p class="filter-label" id="fl-cat">分类</p>
+    <div class="chips" role="group" aria-labelledby="fl-cat">
+      <button class="chip" aria-pressed="true">全部</button>
+      <button class="chip" aria-pressed="false">蔬菜</button>
+      <button class="chip" aria-pressed="false">薯芋</button>
+      <button class="chip" aria-pressed="false">水果</button>
+      <button class="chip" aria-pressed="false">菌藻</button>
+      <button class="chip" aria-pressed="false">坚果种子</button>
+      <button class="chip" aria-pressed="false">药食两用</button>
+      <button class="chip" aria-pressed="false">肉禽</button>
+      <button class="chip" aria-pressed="false">水产</button>
+    </div>
+
+    <!-- 只看当令 -->
+    <div class="term-toggle">
+      <div>
+        <p class="tt-label">只看当令</p>
+        <p class="tt-sub">立冬 ± 2 共 5 个节气</p>
+      </div>
+      <span class="switch">
+        <input type="checkbox" role="switch" aria-label="只看当令食材" checked>
+        <span class="track"></span>
+      </span>
+    </div>
+
+    <p class="result-line">当令食材 38 种 · 已展示 6 种</p>
+
+    <div class="ing-list">
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-winter" aria-hidden="true">白</span>
+        <div class="grow">
+          <h3>白萝卜<span class="alias">菜菔 · 芦菔</span></h3>
+          <div class="badges">
+            <span class="nature-badge n-liang">性凉</span>
+            <span class="flavor-chip">甘</span><span class="flavor-chip">辛</span>
+            <span class="term-tag term-winter">立冬</span>
+            <span class="term-tag term-winter">小雪</span>
+          </div>
+          <p class="desc">降气化痰 · 消食导滞 · 归肺经、胃经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-autumn" aria-hidden="true">山</span>
+        <div class="grow">
+          <h3>山药</h3>
+          <div class="badges">
+            <span class="nature-badge n-ping">性平</span>
+            <span class="flavor-chip">甘</span>
+            <span class="term-tag term-winter">立冬</span>
+          </div>
+          <p class="desc">健脾益气 · 益肾固精 · 归脾经、肺经、肾经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-winter" aria-hidden="true">藕</span>
+        <div class="grow">
+          <h3>莲藕</h3>
+          <div class="badges">
+            <span class="nature-badge n-han">性寒</span>
+            <span class="flavor-chip">甘</span>
+            <span class="term-tag term-autumn">霜降</span>
+            <span class="term-tag term-winter">立冬</span>
+          </div>
+          <p class="desc">清热生津 · 凉血止血 · 归心经、脾经、胃经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-spring" aria-hidden="true">梨</span>
+        <div class="grow">
+          <h3>雪梨</h3>
+          <div class="badges">
+            <span class="nature-badge n-liang">性凉</span>
+            <span class="flavor-chip">甘</span><span class="flavor-chip">酸</span>
+            <span class="term-tag term-winter">立冬</span>
+            <span class="term-tag term-winter">小雪</span>
+          </div>
+          <p class="desc">生津止渴 · 润肺止咳 · 归肺经、胃经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-spring" aria-hidden="true">百</span>
+        <div class="grow">
+          <h3>百合</h3>
+          <div class="badges">
+            <span class="nature-badge n-weihan">性微寒</span>
+            <span class="flavor-chip">甘</span>
+            <span class="term-tag term-winter">立冬</span>
+          </div>
+          <p class="desc">养心安神 · 润肺止咳 · 归心经、肺经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+
+      <a class="list-row" href="ingredient-detail.html">
+        <span class="mono mono-lg m-autumn" aria-hidden="true">栗</span>
+        <div class="grow">
+          <h3>板栗</h3>
+          <div class="badges">
+            <span class="nature-badge n-wen">性温</span>
+            <span class="flavor-chip">甘</span>
+            <span class="term-tag term-winter">立冬</span>
+            <span class="term-tag term-winter">小雪</span>
+          </div>
+          <p class="desc">强筋壮骨 · 健脾益气 · 归脾经、胃经、肾经</p>
+        </div>
+        <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="主导航">
+    <a href="home.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-sun"/></svg><span>今日</span>
+    </a>
+    <a href="recipes.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-book"/></svg><span>菜谱</span>
+    </a>
+    <a href="ingredients.html" aria-current="page">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-leaf"/></svg><span>食材</span>
+    </a>
+    <a href="mine.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-user"/></svg><span>我的</span>
+    </a>
+  </nav>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

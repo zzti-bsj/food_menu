@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 白萝卜炖鸡汤</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（菜品详情页 v1.1）—— */
+
+  /* 封面头：通栏深黛渐变 */
+  .dish-cover {
+    position: relative;
+    margin: var(--s2) var(--s5) 0;
+    border-radius: var(--r-l);
+    background: linear-gradient(150deg, #3D5A7E 0%, #2E4A66 46%, var(--accent-deep) 100%);
+    box-shadow: 0 4px 12px rgba(34,58,82,.28), 0 18px 44px rgba(34,58,82,.34);
+    padding: var(--s5);
+    color: #fff;
+    overflow: hidden;
+  }
+  .dish-cover::before {          /* 盘弧纹样（装饰） */
+    content: "";
+    position: absolute;
+    right: -70px; top: -70px;
+    width: 210px; height: 210px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.18);
+  }
+  .dish-cover::after {
+    content: "";
+    position: absolute;
+    right: -44px; top: -44px;
+    width: 210px; height: 210px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255,255,255,.12);
+  }
+  .dish-cover h1 {
+    font-family: var(--font-display);
+    font-size: 30px; font-weight: 600; letter-spacing: 3px;
+    line-height: 1.3;
+    text-shadow: 0 2px 8px rgba(0,0,0,.2);
+    max-width: 220px;
+  }
+  .dish-cover .c-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
+  .c-chip {
+    font-size: 12px; font-weight: 600;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.30);
+    border-radius: 6px; padding: 5px 8px;
+    color: #fff;
+    backdrop-filter: blur(4px);
+  }
+  .c-chip.chef { background: var(--seal); border-color: var(--seal); }
+  .cover-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3); }
+
+  /* 热量环 */
+  .kcal-ring { position: relative; flex: none; width: 84px; text-align: center; }
+  .kcal-ring svg { display: block; }
+  .kcal-ring .val {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-bottom: 18px;
+  }
+  .kcal-ring .val b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .kcal-ring .cap { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 2px; }
+
+  /* 定量表 */
+  .ing-table { display: flex; flex-direction: column; }
+  .ing-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 15px;
+  }
+  .ing-row:last-child { border-bottom: none; }
+  .ing-row .role { font-size: 12px; color: var(--ink-3); margin-right: 8px; }
+  .ing-row .amt {
+    color: var(--ink-2);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+
+  /* 养生好处 */
+  .benefit-card { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
+  .benefit-card .b-item { display: flex; gap: var(--s3); }
+  .benefit-card .b-icon {
+    flex: none;
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+  }
+  .benefit-card .b-item h3 {
+    font-size: 13px; font-weight: 700; color: var(--accent-deep);
+    letter-spacing: 1px;
+  }
+  .benefit-card .b-item p { font-size: 15px; line-height: 1.75; color: var(--ink); margin-top: 4px; }
+
+  /* 吸底操作条 */
+  .cta-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; gap: var(--s3); align-items: center;
+    padding: var(--s3) var(--s5) calc(40px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+  }
+  .cta-bar .btn { flex: 1; }
+  .cta-bar .icon-btn {
+    width: 48px; height: 48px;
+    border: 1px solid var(--line-strong); border-radius: 15px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8V4z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+  <symbol id="i-bowl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <!-- 详情页为二级页面：无底部 Tab，吸底操作条 -->
+  <div class="screen no-tabbar" style="padding-bottom:130px">
+    <header class="nav-header">
+      <a class="icon-btn" href="recipes.html" aria-label="返回菜谱">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <span style="font-size:13px;color:var(--ink-3)">菜品详情</span>
+    </header>
+
+    <!-- 封面头 -->
+    <section class="dish-cover" aria-labelledby="dish-name">
+      <div class="cover-row">
+        <h1 id="dish-name">白萝卜炖鸡汤</h1>
+        <div class="kcal-ring" role="img" aria-label="每份约350千卡，为每日参考摄入500千卡一餐的七成">
+          <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true">
+            <circle cx="42" cy="42" r="36" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="7"/>
+            <circle cx="42" cy="42" r="36" fill="none" stroke="#E8B04B" stroke-width="7"
+              stroke-linecap="round" stroke-dasharray="158.6 226.2" transform="rotate(-90 42 42)"/>
+          </svg>
+          <span class="val"><b>350</b></span>
+          <span class="cap">千卡/份<br>约一餐七成</span>
+        </div>
+      </div>
+      <div class="c-meta">
+        <span class="c-chip chef">健康厨师</span>
+        <span class="c-chip">家常 · 炖</span>
+        <span class="c-chip">立冬 · 小雪</span>
+        <span class="c-chip">共 2 人份</span>
+      </div>
+    </section>
+
+    <!-- 主料定量 -->
+    <section class="section" aria-labelledby="sec-main" style="margin-top:var(--s5)">
+      <div class="section-head"><h2 id="sec-main">主料 · 每份定量</h2></div>
+      <div class="page-pad">
+        <div class="card" style="padding:var(--s3) var(--s4)">
+          <div class="ing-table">
+            <div class="ing-row">
+              <span><span class="role">主料</span>白萝卜</span>
+              <span class="amt">半根 · 约400g</span>
+            </div>
+            <div class="ing-row">
+              <span><span class="role">主料</span>鸡腿肉（去皮）</span>
+              <span class="amt">1块 · 约150g</span>
+            </div>
+            <div class="ing-row">
+              <span><span class="role">辅料</span>姜 · 枸杞</span>
+              <span class="amt">3片 · 10粒</span>
+            </div>
+            <div class="ing-row">
+              <span><span class="role">调料</span>盐 · 生抽 · 小葱</span>
+              <span class="amt">2g · 5ml · 1根</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="orn" aria-hidden="true"><i></i></div>
+
+    <!-- 步骤 -->
+    <section class="section" aria-labelledby="sec-steps" style="margin-top:var(--s3)">
+      <div class="section-head"><h2 id="sec-steps">制作步骤</h2></div>
+      <div class="page-pad">
+        <div class="timeline" style="padding:var(--s1) var(--s2)">
+          <div class="step">
+            <span class="step-no">1</span>
+            <p>鸡腿肉切4厘米块，冷水下锅，加姜片1片，大火煮出浮沫即捞出，温水冲净。
+              <span class="tip">焯水去腥的关键：冷水下锅、水沸即出，肉质不柴。</span></p>
+          </div>
+          <div class="step">
+            <span class="step-no">2</span>
+            <p>白萝卜削皮，切滚刀块（约3厘米）。
+              <span class="tip">滚刀块受热均匀，久炖不散。</span></p>
+          </div>
+          <div class="step">
+            <span class="step-no">3</span>
+            <p>砂锅一次加足热水，放入鸡块与姜片，大火烧开转小火，加盖慢炖20分钟。
+              <span class="tip">中途不添水，汤色才清。</span></p>
+          </div>
+          <div class="step">
+            <span class="step-no">4</span>
+            <p>下萝卜块续炖15分钟，至边缘微透、筷子可轻松插入即到位。
+              <span class="tip">过早下萝卜会炖烂失形。</span></p>
+          </div>
+          <div class="step">
+            <span class="step-no">5</span>
+            <p>关火前调味：加盐2g、生抽5ml，下枸杞10粒，余温焖3分钟，撒葱花上桌。
+              <span class="tip">盐后放，肉质不柴、汤清不浑。</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="orn" aria-hidden="true"><i></i></div>
+
+    <!-- 养生好处 -->
+    <section class="section" aria-labelledby="sec-benefit" style="margin-top:var(--s3)">
+      <div class="section-head"><h2 id="sec-benefit">养生好处</h2></div>
+      <div class="page-pad">
+        <div class="card benefit-card">
+          <div class="b-item">
+            <span class="b-icon" aria-hidden="true"><svg width="20" height="20"><use href="#i-leaf"/></svg></span>
+            <div>
+              <h3>中医 · 性味</h3>
+              <p>白萝卜性凉味甘辛，降气化痰、消食导滞；鸡肉甘温，温中益气。萝卜得肉润而不过寒，汤清味醇，冬食顺气不腻。</p>
+            </div>
+          </div>
+          <div class="b-item">
+            <span class="b-icon" aria-hidden="true" style="background:var(--autumn-soft);color:var(--autumn-deep)"><svg width="20" height="20"><use href="#i-bowl"/></svg></span>
+            <div>
+              <h3 style="color:var(--autumn-deep)">现代 · 营养</h3>
+              <p>去皮鸡腿肉低脂高蛋白（每份约25g蛋白质），白萝卜富含维生素C与钾；整份约350千卡，减脂期亦可作主菜。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 忌口提示 -->
+    <section class="section" aria-labelledby="sec-caution">
+      <div class="section-head"><h2 id="sec-caution">忌口提示</h2></div>
+      <div class="page-pad">
+        <div class="notice-card">
+          <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div>
+            <h3>这些情况要注意</h3>
+            <p>萝卜性凉，脾胃虚寒、易腹泻者少食；服人参、黄芪等补气药膳当日不宜同食萝卜（传统食忌，仅供参考）；痛风急性期慎饮浓汤。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 吸底操作条 -->
+  <div class="cta-bar">
+    <button class="icon-btn" type="button" aria-label="收藏这道菜">
+      <svg width="22" height="22" aria-hidden="true"><use href="#i-heart"/></svg>
+    </button>
+    <button class="btn btn-primary" type="button">
+      <svg width="18" height="18" aria-hidden="true"><use href="#i-play"/></svg>
+      开始烹饪
+    </button>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

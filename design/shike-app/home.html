@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 今日</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（今日页 v1.1）—— */
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  .date-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: var(--s2) var(--s5) 0;
+    font-size:13px; color: var(--ink-3);
+  }
+
+  /* 节气 Hero：封面级深黛卡 */
+  .hero {
+    margin: var(--s3) var(--s5) 0;
+    border-radius: var(--r-l);
+    background: linear-gradient(150deg, #3D5A7E 0%, #2E4A66 46%, var(--accent-deep) 100%);
+    box-shadow: 0 4px 12px rgba(34,58,82,.28), 0 18px 44px rgba(34,58,82,.34);
+    padding: var(--s5);
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+  }
+  /* 远山剪影（装饰） */
+  .hero .hills { position:absolute; left:0; right:0; bottom:0; pointer-events:none; }
+  /* 云弧（装饰） */
+  .hero::before {
+    content:"";
+    position:absolute; right:-58px; top:-58px;
+    width:190px; height:190px; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.18);
+  }
+  .hero::after {
+    content:"";
+    position:absolute; right:-30px; top:-30px;
+    width:190px; height:190px; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.10);
+  }
+  .hero .meta {
+    display:flex; align-items:center; gap:8px;
+    font-size:13px; letter-spacing:1px; color: rgba(255,255,255,.78);
+  }
+  .hero .meta .seal { width:26px; height:26px; font-size:13px; border-radius:5px; }
+  .hero-body { display:flex; align-items:stretch; justify-content:space-between; gap: var(--s3); margin-top: var(--s2); }
+  .hero h2 {
+    font-family: var(--font-display);
+    font-size:66px; line-height:1.15; font-weight:600;
+    letter-spacing:7px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.22);
+  }
+  .hero .verse {
+    writing-mode: vertical-rl;
+    font-family: var(--font-display);
+    font-size:14px; letter-spacing:7px;
+    color: rgba(255,255,255,.82);
+    padding-top: 10px;
+  }
+  .enter-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top: var(--s3);
+    font-size:13px; font-weight:600;
+    color: #fff;
+    background: rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.30);
+    border-radius:999px; padding:7px 12px;
+    backdrop-filter: blur(4px);
+  }
+  .term-strip { margin-top: var(--s4); }
+  .term-strip .label { font-size:13px; color: rgba(255,255,255,.72); margin-bottom: var(--s2); }
+  .term-strip .dots { display:flex; gap: var(--s2); flex-wrap:wrap; }
+  .term-strip .dot {
+    font-size:13px; font-weight:600; padding:7px 12px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.30); color:#fff;
+    background: rgba(255,255,255,.10);
+  }
+  .term-strip .dot.now {
+    background:#fff; border-color:#fff;
+    color: var(--accent-deep);
+    box-shadow: 0 3px 10px rgba(0,0,0,.22);
+  }
+  .hero-foot {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top: var(--s4); padding-top: var(--s3);
+    border-top: 1px dashed rgba(255,255,255,.28);
+  }
+  .hero-foot .motto { font-size:13px; color: rgba(255,255,255,.72); }
+  .hero-foot a {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:13px; color:#fff; text-decoration:none; font-weight:700;
+    padding:8px 0 8px 8px;
+  }
+  .hero-foot a:active { opacity:.8; }
+
+  /* 当令食材横滑卡（食签牌版） */
+  .hscroll {
+    display:flex; gap: var(--s3);
+    overflow-x:auto; padding: 2px var(--s5) var(--s2);
+    scroll-snap-type: x proximity;
+    scrollbar-width:none;
+  }
+  .hscroll::-webkit-scrollbar { display:none; }
+  .ing-card {
+    flex:none; width:158px;
+    scroll-snap-align:start;
+    background: var(--surface);
+    border:1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--shadow-card);
+    padding: var(--s4);
+    text-decoration:none; color:inherit;
+    transition: transform 100ms var(--ease), box-shadow var(--dur) var(--ease);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .ing-card:active { transform: scale(.97); box-shadow: var(--shadow-lift); }
+  .ing-card h3 { font-family: var(--font-display); font-size:18px; font-weight:600; letter-spacing:1px; }
+  .ing-card .ben { font-size:13px; line-height:1.6; color: var(--ink-3); }
+  .ing-card .badges { display:flex; gap:6px; flex-wrap:wrap; }
+  .ing-card .head { display:flex; align-items:center; gap:10px; }
+
+  /* 菜谱列表（带签牌） */
+  .dish-list { display:flex; flex-direction:column; gap: var(--s3); padding: 0 var(--s5); }
+  .dish-row .top { display:flex; align-items:center; gap: var(--s2); }
+  .style-tag {
+    font-size:12px; color: var(--ink-2);
+    border:1px solid var(--line-strong); border-radius:6px; padding:4px 7px;
+    background: var(--surface-2);
+  }
+</style>
+</head>
+<body>
+
+<!-- 图标 Sprite（线性 1.8px，统一 currentColor） -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+</svg>
+
+<div class="phone">
+  <!-- 状态栏（装饰） -->
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen">
+    <h1 class="sr-only">食刻 · 今日</h1>
+
+    <div class="date-row">
+      <span>2026年11月7日 · 星期六</span>
+      <span>宜食 · 温润</span>
+    </div>
+
+    <!-- 节气 Hero（封面级） -->
+    <section class="hero" aria-labelledby="hero-term">
+      <svg class="hills" width="100%" height="72" viewBox="0 0 350 72" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 72 L0 46 Q60 18 128 44 Q200 70 258 38 Q308 12 350 40 L350 72 Z" fill="rgba(255,255,255,.07)"/>
+        <path d="M0 72 L0 58 Q80 34 160 56 Q250 80 310 52 Q335 40 350 50 L350 72 Z" fill="rgba(255,255,255,.10)"/>
+      </svg>
+      <p class="meta"><span class="seal" aria-hidden="true">食</span>二十四节气 · 第 19 · 冬</p>
+      <div class="hero-body">
+        <h2 id="hero-term">立冬</h2>
+        <p class="verse">冬之始 · 万物收藏</p>
+      </div>
+      <span class="enter-chip">
+        <svg width="16" height="16" aria-hidden="true"><use href="#i-calendar"/></svg>
+        明日 06:04 入节
+      </span>
+      <div class="term-strip">
+        <p class="label">当令推荐范围 · 当前节气 ±2</p>
+        <div class="dots">
+          <span class="dot">寒露</span>
+          <span class="dot">霜降</span>
+          <span class="dot now" aria-current="true">立冬</span>
+          <span class="dot">小雪</span>
+          <span class="dot">大雪</span>
+        </div>
+      </div>
+      <div class="hero-foot">
+        <span class="motto">食在当令 · 一期一会</span>
+        <a href="terms.html">全年节气 <svg width="14" height="14" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      </div>
+    </section>
+
+    <!-- 当令食材 -->
+    <section class="section" aria-labelledby="sec-ing">
+      <div class="section-head">
+        <h2 id="sec-ing">当令食材</h2>
+        <a class="more" href="ingredients.html">全部 <svg width="14" height="14" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      </div>
+      <div class="hscroll">
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-winter" aria-hidden="true">白</span>
+            <h3>白萝卜</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-liang">性凉</span>
+            <span class="flavor-chip">甘</span><span class="flavor-chip">辛</span>
+          </div>
+          <p class="ben">降气化痰 · 消食导滞</p>
+        </a>
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-autumn" aria-hidden="true">山</span>
+            <h3>山药</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-ping">性平</span>
+            <span class="flavor-chip">甘</span>
+          </div>
+          <p class="ben">健脾益气 · 益肾固精</p>
+        </a>
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-winter" aria-hidden="true">藕</span>
+            <h3>莲藕</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-han">性寒</span>
+            <span class="flavor-chip">甘</span>
+          </div>
+          <p class="ben">清热生津 · 凉血止血</p>
+        </a>
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-spring" aria-hidden="true">梨</span>
+            <h3>雪梨</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-liang">性凉</span>
+            <span class="flavor-chip">甘</span><span class="flavor-chip">酸</span>
+          </div>
+          <p class="ben">生津止渴 · 润肺止咳</p>
+        </a>
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-spring" aria-hidden="true">百</span>
+            <h3>百合</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-weihan">性微寒</span>
+            <span class="flavor-chip">甘</span>
+          </div>
+          <p class="ben">养心安神 · 润肺止咳</p>
+        </a>
+        <a class="ing-card" href="ingredient-detail.html">
+          <div class="head">
+            <span class="mono mono-md m-autumn" aria-hidden="true">栗</span>
+            <h3>板栗</h3>
+          </div>
+          <div class="badges">
+            <span class="nature-badge n-wen">性温</span>
+            <span class="flavor-chip">甘</span>
+          </div>
+          <p class="ben">强筋壮骨 · 健脾益气</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- 应季菜谱 -->
+    <section class="section" aria-labelledby="sec-dish">
+      <div class="section-head">
+        <h2 id="sec-dish">应季菜谱</h2>
+        <a class="more" href="recipes.html">菜谱库 <svg width="14" height="14" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      </div>
+      <div class="dish-list">
+        <a class="list-row dish-row" href="dish-detail.html">
+          <span class="mono mono-lg m-winter" aria-hidden="true">萝</span>
+          <div class="grow">
+            <div class="top">
+              <h3>白萝卜炖鸡汤</h3>
+              <span class="style-tag">家常 · 炖</span>
+            </div>
+            <p class="desc">白萝卜、鸡腿肉 · 汤清味醇，冬食顺气</p>
+            <div class="meta-line">
+              <span class="kcal"><svg width="13" height="13" aria-hidden="true"><use href="#i-flame"/></svg>约350千卡/份</span>
+              <span class="term-tag term-winter">立冬</span>
+              <span class="term-tag term-winter">小雪</span>
+            </div>
+          </div>
+          <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </a>
+        <a class="list-row dish-row" href="dish-detail.html">
+          <span class="mono mono-lg m-autumn" aria-hidden="true">山</span>
+          <div class="grow">
+            <div class="top">
+              <h3>山药小米粥</h3>
+              <span class="style-tag">家常 · 煮</span>
+            </div>
+            <p class="desc">山药、小米 · 晨起一碗，脾胃得安</p>
+            <div class="meta-line">
+              <span class="kcal"><svg width="13" height="13" aria-hidden="true"><use href="#i-flame"/></svg>约290千卡/份</span>
+              <span class="term-tag term-winter">立冬</span>
+            </div>
+          </div>
+          <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </a>
+        <a class="list-row dish-row" href="dish-detail.html">
+          <span class="mono mono-lg m-spring" aria-hidden="true">雪</span>
+          <div class="grow">
+            <div class="top">
+              <h3>雪梨银耳羹</h3>
+              <span class="style-tag">苏式 · 炖</span>
+            </div>
+            <p class="desc">雪梨、银耳、百合 · 润燥清甜</p>
+            <div class="meta-line">
+              <span class="kcal"><svg width="13" height="13" aria-hidden="true"><use href="#i-flame"/></svg>约160千卡/份</span>
+              <span class="term-tag term-winter">立冬</span>
+              <span class="term-tag term-winter">小雪</span>
+            </div>
+          </div>
+          <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <!-- 悬浮 Dock 导航 -->
+  <nav class="tabbar" aria-label="主导航">
+    <a href="home.html" aria-current="page">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-sun"/></svg><span>今日</span>
+    </a>
+    <a href="recipes.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-book"/></svg><span>菜谱</span>
+    </a>
+    <a href="ingredients.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-leaf"/></svg><span>食材</span>
+    </a>
+    <a href="mine.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-user"/></svg><span>我的</span>
+    </a>
+  </nav>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

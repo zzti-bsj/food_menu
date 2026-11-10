@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 App · 页面设计 v1.0</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 画廊页：桌面工作台，非手机壳 —— */
+  body { display: block; padding: 56px 32px 80px; background: #E9E5DC; }
+  @media (max-width: 640px) { body { padding: 32px 16px 64px; } }
+
+  .gallery { max-width: 1240px; margin: 0 auto; }
+
+  .g-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s3); }
+  .g-head h1 {
+    font-family: var(--font-display);
+    font-size: 32px; font-weight: 600; letter-spacing: 2px;
+  }
+  .g-head .ver { font-size: 13px; color: var(--ink-3); }
+  .g-sub { margin-top: var(--s2); font-size: 15px; color: var(--ink-2); line-height: 1.7; max-width: 720px; }
+  .g-sub a { color: var(--winter); font-weight: 600; text-decoration: none; }
+  .g-sub a:hover { text-decoration: underline; }
+
+  .spec { margin-top: var(--s5); display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .spec .chip { height: 32px; font-size: 12px; }
+  .spec .sw { width: 14px; height: 14px; border-radius: 999px; border: 1px solid rgba(38,35,28,.12); }
+
+  .shots { margin-top: var(--s6); display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px var(--s5); }
+
+  .shot { text-decoration: none; color: inherit; display: block; }
+  .shot .frame {
+    width: 242px;            /* 390 × .62 */
+    height: 523px;           /* 844 × .62 */
+    border-radius: 30px;
+    overflow: hidden;
+    border: 1px solid #CFC9BA;
+    box-shadow: var(--shadow-card);
+    background: var(--bg);
+    position: relative;
+    transition: transform 150ms var(--ease), box-shadow 150ms var(--ease);
+  }
+  .shot:hover .frame { transform: translateY(-4px); box-shadow: var(--shadow-float); }
+  .shot iframe {
+    width: 390px; height: 844px;
+    border: 0;
+    transform: scale(.62);
+    transform-origin: top left;
+    pointer-events: none;    /* 点击交给外层链接，整页打开 */
+  }
+  .shot figcaption { margin-top: 12px; }
+  .shot figcaption b { font-size: 15px; font-weight: 600; display: block; }
+  .shot figcaption span { font-size: 13px; color: var(--ink-3); }
+
+  .g-foot { margin-top: var(--s8); font-size: 13px; color: var(--ink-3); line-height: 1.8; }
+</style>
+</head>
+<body>
+<main class="gallery">
+  <header class="g-head">
+    <h1>食刻 App · 页面设计</h1>
+    <span class="ver">v1.1 · 2026-11-06 · Android / iOS</span>
+  </header>
+  <p class="g-sub">
+    二十四节气 × 顺时饮食。基于现有数据层（食材/菜品档案、节气词表、±2 当令推荐口径）设计的一套 C 端移动页面。
+    设计规范见 <a href="DESIGN-SYSTEM.md">DESIGN-SYSTEM.md</a>，原型总览见 <a href="README.md">README.md</a>。点击任意画面打开可交互原型。
+  </p>
+
+  <div class="spec">
+    <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      <span class="sw" style="background:#37714A"></span>春 · 青
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      <span class="sw" style="background:#B5432C"></span>夏 · 朱
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      <span class="sw" style="background:#8A5D15"></span>秋 · 赭
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      <span class="sw" style="background:#2E4A66"></span>冬 · 黛（当前季）
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      宣纸底 #F6F2E9 · 墨字 #26231C
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      朱砂印章 · 食签牌 · 封面级 Hero · 悬浮 Dock
+    </span>
+    <span class="chip" style="display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:0 12px;background:#fff">
+      思源宋（展示）× 苹方/思源黑（正文）
+    </span>
+  </div>
+
+  <div class="shots">
+    <a class="shot" href="home.html">
+      <figure>
+        <div class="frame"><iframe src="home.html" title="今日页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>今日</b><span>节气 Hero · 当令食材 · 应季菜谱</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="terms.html">
+      <figure>
+        <div class="frame"><iframe src="terms.html" title="全年节气页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>全年节气</b><span>四季分组 · 当令范围口径</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="recipes.html">
+      <figure>
+        <div class="frame"><iframe src="recipes.html" title="菜谱库页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>菜谱库</b><span>节气/做法筛选 · 菜品卡列表</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="dish-detail.html">
+      <figure>
+        <div class="frame"><iframe src="dish-detail.html" title="菜品详情页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>菜品详情</b><span>主料定量 · 步骤时间线 · 养生/忌口</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="ingredients.html">
+      <figure>
+        <div class="frame"><iframe src="ingredients.html" title="食材百科页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>食材百科</b><span>分类筛选 · 只看当令 · 档案列表</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="ingredient-detail.html">
+      <figure>
+        <div class="frame"><iframe src="ingredient-detail.html" title="食材详情页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>食材详情</b><span>性味归经 · 当令节气 · 典籍注脚</span></figcaption>
+      </figure>
+    </a>
+
+    <a class="shot" href="mine.html">
+      <figure>
+        <div class="frame"><iframe src="mine.html" title="我的页预览" loading="lazy" tabindex="-1"></iframe></div>
+        <figcaption><b>我的</b><span>本地偏好 · 节气提醒 · 数据说明</span></figcaption>
+      </figure>
+    </a>
+  </div>
+
+  <footer class="g-foot">
+    导航结构：一级 4 Tab（今日 / 菜谱 / 食材 / 我的）；全年节气、菜品详情、食材详情为二级 push 页。
+    示例数据（食材档案、菜谱、典籍引文）为设计占位，值域对齐词表但未经考据审定。
+  </footer>
+</main>
+</body>
+</html>
