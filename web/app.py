@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 from llm.batch import IngredientBatchPipeline
+from llm.cuisine_pipeline import CuisinePipeline
 from llm.dish_pipeline import DishPipeline
 from shike import repository
 from shike.vocab import load_vocab
@@ -67,9 +68,16 @@ def dishes():
     return jsonify(grouped)
 
 
+@app.get("/api/cuisines")
+def cuisines():
+    return jsonify(list(VOCAB.cuisines))
+
+
 @app.post("/api/dishes")
 def create_dish():
     data = request.get_json(silent=True) or {}
+    if data.get("chef") == "cuisine":
+        return jsonify(CuisinePipeline().run(data.get("mode") or "", data))
     ingredients = data.get("ingredients")
     if (
         not isinstance(ingredients, list)
@@ -88,6 +96,17 @@ def set_dish_status():
     if not name or status not in STATUSES:
         return jsonify({"error": "参数不合法"}), 400
     if not repository.update_dish_status(name, status):
+        return jsonify({"error": f"未找到菜品:{name}"}), 404
+    return jsonify({"ok": True})
+
+
+@app.post("/api/dish/image")
+def set_dish_image():
+    data = request.get_json(silent=True) or {}
+    name, image = data.get("name"), data.get("image")
+    if not name or not isinstance(image, str):
+        return jsonify({"error": "参数不合法"}), 400
+    if not repository.update_dish_image(name, image.strip() or None):
         return jsonify({"error": f"未找到菜品:{name}"}), 404
     return jsonify({"ok": True})
 
