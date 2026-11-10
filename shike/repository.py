@@ -94,6 +94,52 @@ def find_ingredients_by_names(names: list[str]) -> list[dict]:
         conn.close()
 
 
+_USER_FIELDS = ("phone", "password_hash", "nickname", "role", "status")
+_USER_SELECT = "id,phone,password_hash,nickname,role,status"
+
+
+def insert_user(record: dict) -> None:
+    """写入一枚用户;phone 冲突时抛 pymysql IntegrityError。"""
+    fields = [f for f in _USER_FIELDS if record.get(f) is not None]
+    columns = ",".join(f"`{f}`" for f in fields)
+    placeholders = ",".join(["%s"] * len(fields))
+    values = [record[f] for f in fields]
+
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"INSERT INTO user ({columns}) VALUES ({placeholders})", values)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def find_user_by_phone(phone: str) -> dict | None:
+    """按手机号查一枚用户(含密码哈希,登录校验用);不命中返回 None。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                f"SELECT {_USER_SELECT} FROM user WHERE phone=%s LIMIT 1", (phone,)
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def find_user_by_id(user_id: int) -> dict | None:
+    """按 id 查一枚用户(令牌换用户用);不命中返回 None。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                f"SELECT {_USER_SELECT} FROM user WHERE id=%s LIMIT 1", (user_id,)
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
 _DISH_FIELDS = (
     "name",
     "category",
