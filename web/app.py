@@ -104,9 +104,12 @@ def set_dish_status():
 def set_dish_image():
     data = request.get_json(silent=True) or {}
     name, image = data.get("name"), data.get("image")
-    if not name or not isinstance(image, str):
+    if not name or image is None or not isinstance(image, str):
         return jsonify({"error": "参数不合法"}), 400
-    if not repository.update_dish_image(name, image.strip() or None):
+    image = image.strip()
+    if len(image) > 500:
+        return jsonify({"error": "图片URL过长(>500字)"}), 400
+    if not repository.update_dish_image(name, image or None):
         return jsonify({"error": f"未找到菜品:{name}"}), 404
     return jsonify({"ok": True})
 

@@ -29,7 +29,7 @@ class LLMClient:
 
     @classmethod
     def for_role(cls, role: str) -> "LLMClient":
-        """按流水线角色(recommend/fill/verify)取档案构建客户端。"""
+        """按流水线角色(recommend/fill/verify/chef/dish_verify/cuisine_chef/cuisine_verify)取档案构建客户端。"""
         return cls(profile=profile_for(role))
 
     def chat(self, system: str, user: str, temperature: float = 0.3) -> str:

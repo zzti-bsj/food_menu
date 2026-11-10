@@ -143,7 +143,7 @@ def test_cuisine_mode_rejects_cuisine_outside_vocab():
     assert chef.client.calls == 0
 
 
-def test_doubt_inserts_with_remark(monkeypatch):
+def test_doubt_inserts_with_remark():
     pipeline, _ = make_pipeline(verify_response=DOUBT)
     result = pipeline.run("cuisine", {"cuisine": "川菜"})
     assert result["stage"] == "inserted"
