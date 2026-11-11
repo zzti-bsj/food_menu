@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `ingredient` (
   `season_note`  VARCHAR(100) DEFAULT NULL COMMENT '时令备注,可空,如「全年」「9-11月」',
   `caution`      VARCHAR(500) DEFAULT NULL COMMENT '食用注意,可空',
   `classic_note` VARCHAR(500) DEFAULT NULL COMMENT '国学注脚,典籍出处+一句原文,可空',
+  `image`        VARCHAR(500) DEFAULT NULL COMMENT '食材图片URL/路径',
   `solar_terms`  VARCHAR(100) NOT NULL COMMENT '当令节气,多选,按节气序号升序写入',
   `user_id`      BIGINT UNSIGNED DEFAULT NULL COMMENT '归属用户,NULL=官方库',
   `status`       VARCHAR(10)  NOT NULL DEFAULT '待审核' COMMENT '审核状态:待审核/已通过/已驳回',

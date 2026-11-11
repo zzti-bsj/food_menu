@@ -111,16 +111,9 @@
 
 <svg style="display:none" aria-hidden="true">
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
-  <symbol id="f-radish" viewBox="0 0 48 48">
-    <path d="M24 45c-1.8-2.5-2.4-4.5-2-7" fill="none" stroke="#E8DCC3" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M24 8c-3.5-3-8-3.6-11.5-1.5 1.2 3.6 4.4 6.3 8.5 6.9z" fill="#3B8A56"/>
-    <path d="M24 8c3.5-3 8-3.6 11.5-1.5-1.2 3.6-4.4 6.3-8.5 6.9z" fill="#4FA06B"/>
-    <path d="M24 41c-8.3 0-14-6-14-13.2C10 19.4 16 13 24 13s14 6.4 14 14.8C38 35 32.3 41 24 41z" fill="#F5F2E8"/>
-    <path d="M13.5 25.5c2.5-1 5.5-1 8 .3M26.5 26c2.5-1.3 5.5-1.4 8-.4" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M24 41c-1.6-3.2-1.6-6.5 0-9.8" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
-  </symbol>
   <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
   <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
 </svg>
 
 <div class="phone">
@@ -144,8 +137,8 @@
     <!-- 封面头 -->
     <section class="ing-hero panel-pop winter" aria-labelledby="ing-name">
       <div class="head">
-        <span style="flex:none;width:68px;height:68px;border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at 30% 25%, #F0F7FD 0%, #D9EAF7 100%);box-shadow:inset 0 -3px 0 rgba(38,35,28,.05), 0 2px 6px rgba(38,35,28,.08)" aria-hidden="true">
-          <svg width="46" height="46"><use href="#f-radish"/></svg>
+        <span style="flex:none;width:68px;height:68px;border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at 30% 25%, #FDFBF5 0%, #F0EBDC 100%);border:1.5px dashed var(--line-strong);color:var(--ink-3)" aria-hidden="true">
+          <svg width="28" height="28"><use href="#i-leaf"/></svg>
         </span>
         <div>
           <h1 id="ing-name">白萝卜</h1>
@@ -250,28 +243,6 @@
       </div>
     </section>
 
-    <!-- 用它的菜谱 -->
-    <section class="section" aria-labelledby="sec-dishes">
-      <div class="section-head"><h2 id="sec-dishes">用它的菜谱</h2></div>
-      <div class="page-pad" style="display:flex;flex-direction:column;gap:var(--s3)">
-        <a class="list-row" href="dish-detail.html">
-          <span class="mono mono-md m-winter" aria-hidden="true">汤</span>
-          <div class="grow">
-            <h3>白萝卜炖鸡汤</h3>
-            <p class="desc">家常 · 炖 · 约350千卡/份</p>
-          </div>
-          <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        </a>
-        <a class="list-row" href="dish-detail.html">
-          <span class="mono mono-md m-winter" aria-hidden="true">鲜</span>
-          <div class="grow">
-            <h3>萝卜丝鲫鱼汤</h3>
-            <p class="desc">家常 · 煮 · 约280千卡/份</p>
-          </div>
-          <svg width="20" height="20" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        </a>
-      </div>
-    </section>
   </div>
 
   <div class="home-indicator" aria-hidden="true"></div>

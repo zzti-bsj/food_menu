@@ -107,6 +107,11 @@
     background: var(--accent-soft); border-radius: 6px; padding: 4px 7px;
     font-weight: 700;
   }
+  .chef-tag.cuisine {
+    background: linear-gradient(150deg, #F2B33C 0%, #E8912A 100%);
+    color: #4A3208;
+    box-shadow: 0 1px 4px rgba(232,145,42,.3);
+  }
 </style>
 </head>
 <body>
@@ -167,7 +172,7 @@
     </div>
 
     <div class="result-line">
-      <span>当令共 24 道 · 已展示 6 道</span>
+      <span>当令共 24 道 · 已展示 7 道</span>
       <span class="sort">
         <svg width="14" height="14" aria-hidden="true"><use href="#i-sort"/></svg>
         按节气序
@@ -190,6 +195,22 @@
             <span class="term-tag term-winter">小雪</span>
             <span class="chef-tag">健康厨师</span>
             <span class="sticker green">低卡优选</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="dish-card" href="dish-detail.html">
+        <div class="cover-art pv-autumn cw-autumn">
+          <h3>豉汁蒸排骨</h3>
+          <span class="cover-sub">粤菜 · 蒸<br>美食大厨</span>
+          <span class="kcal-chip"><svg width="13" height="13" aria-hidden="true"><use href="#i-flame"/></svg>约420千卡</span>
+          <span class="cover-char" aria-hidden="true">蒸</span>
+        </div>
+        <div class="body">
+          <p class="desc">广式茶楼早茶名物，豆豉咸鲜渗骨，肉滑骨离。</p>
+          <div class="meta-line">
+            <span class="term-tag term-winter">立冬</span>
+            <span class="chef-tag cuisine">美食大厨</span>
           </div>
         </div>
       </a>

@@ -22,8 +22,8 @@
     width: 68px; height: 68px;
     border-radius: 999px;
     display: grid; place-items: center;
-    background: radial-gradient(circle at 30% 25%, #F0F7FD 0%, #D9EAF7 100%);
-    box-shadow: inset 0 -3px 0 rgba(38,35,28,.05), 0 2px 6px rgba(38,35,28,.08);
+    background: radial-gradient(circle at 30% 25%, #FDFBF5 0%, #F0EBDC 100%);
+    border: 1.5px dashed var(--line-strong);
   }
   .review-cover h1 {
     font-family: var(--font-display);
@@ -82,8 +82,7 @@
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     display: flex; gap: var(--s3);
     padding: var(--s3) var(--s5) calc(40px + env(safe-area-inset-bottom, 0px));
-    background: color-mix(in srgb, var(--bg) 90%, transparent);
-    backdrop-filter: blur(16px);
+    background: var(--bg);               /* 全不透明：内容滚动不透底 */
     border-top: 1px solid var(--line);
   }
   .act-bar .btn { flex: 1; height: 46px; font-size: 15px; }
@@ -101,14 +100,7 @@
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
-  <symbol id="f-radish" viewBox="0 0 48 48">
-    <path d="M24 45c-1.8-2.5-2.4-4.5-2-7" fill="none" stroke="#E8DCC3" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M24 8c-3.5-3-8-3.6-11.5-1.5 1.2 3.6 4.4 6.3 8.5 6.9z" fill="#3B8A56"/>
-    <path d="M24 8c3.5-3 8-3.6 11.5-1.5-1.2 3.6-4.4 6.3-8.5 6.9z" fill="#4FA06B"/>
-    <path d="M24 41c-8.3 0-14-6-14-13.2C10 19.4 16 13 24 13s14 6.4 14 14.8C38 35 32.3 41 24 41z" fill="#F5F2E8"/>
-    <path d="M13.5 25.5c2.5-1 5.5-1 8 .3M26.5 26c2.5-1.3 5.5-1.4 8-.4" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M24 41c-1.6-3.2-1.6-6.5 0-9.8" fill="none" stroke="#E3DECB" stroke-width="1.8" stroke-linecap="round"/>
-  </symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
 </svg>
 
 <div class="phone">
@@ -130,7 +122,7 @@
     </header>
 
     <section class="review-cover panel-pop winter" aria-labelledby="rv-name">
-      <span class="disc" aria-hidden="true"><svg width="44" height="44"><use href="#f-radish"/></svg></span>
+      <span class="disc" aria-hidden="true"><svg width="26" height="26" style="color:var(--ink-3)"><use href="#i-leaf"/></svg></span>
       <div>
         <h1 id="rv-name">白萝卜</h1>
         <p class="alias">别名 · 菜菔、芦菔　|　分类 · 蔬菜</p>
@@ -150,6 +142,19 @@
       <p class="field-label page-pad" id="rv-fields" style="margin-top:0">档案字段（LLM 生成 · 人工终审）</p>
       <div class="page-pad">
         <div class="card f-card">
+          <div class="f-row">
+            <span class="k">食材图片</span>
+            <div class="v" style="display:flex;align-items:center;gap:12px">
+              <span style="flex:none;width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);border:1.5px dashed var(--line-strong);color:var(--ink-3)" aria-hidden="true">
+                <svg width="20" height="20"><use href="#i-leaf"/></svg>
+              </span>
+              <span>
+                <span class="muted">默认占位图</span><br>
+                <button type="button" style="margin-top:6px;font:inherit;font-size:13px;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);border-radius:8px;padding:6px 12px;cursor:pointer">上传 / 替换图片</button>
+                <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:5px">规划字段 ingredient.image · 接口待补</span>
+              </span>
+            </div>
+          </div>
           <div class="f-row">
             <span class="k">四气</span>
             <div class="v">凉 <span class="vok">词表 ✓</span> <span class="muted">七档单选</span></div>
@@ -186,7 +191,7 @@
       </div>
     </section>
 
-    <p class="hint">示例数据 · 通过/驳回调用 POST /api/status（status=已通过/已驳回）；国学注脚为典籍溯源字段，建议逐条核对原文。</p>
+    <p class="hint">示例数据 · 通过/驳回调用 POST /api/status（status=已通过/已驳回）；国学注脚为典籍溯源字段，建议逐条核对原文；图片上传接口待后端补充（规划 ingredient.image 字段）。</p>
   </div>
 
   <!-- 吸底三态操作 -->

@@ -15,6 +15,7 @@ _INGREDIENT_FIELDS = (
     "classic_note",
     "solar_terms",
 )
+_INGREDIENT_WRITABLE = (*_INGREDIENT_FIELDS, "image")
 
 
 def list_names_by_solar_terms(terms: list[str]) -> list[str]:
@@ -94,6 +95,53 @@ def find_ingredients_by_names(names: list[str]) -> list[dict]:
         conn.close()
 
 
+def find_ingredient_by_id(ingredient_id: int) -> dict | None:
+    """按 id 查一枚食材完整档案(含归属、审核状态与图片);不命中返回 None。"""
+    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_INGREDIENT_WRITABLE, "status"))
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(
+                f"SELECT {fields} FROM ingredient WHERE id=%s LIMIT 1", (ingredient_id,)
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def update_ingredient(ingredient_id: int, fields: dict) -> bool:
+    """按 id 更新食材白名单字段(审核状态走 update_ingredient_status);返回是否命中。"""
+    names = [f for f in _INGREDIENT_WRITABLE if f in fields]
+    if not names:
+        return False
+    assignments = ",".join(f"`{f}`=%s" for f in names)
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                f"UPDATE ingredient SET {assignments} WHERE id=%s",
+                [fields[f] for f in names] + [ingredient_id],
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
+def delete_ingredient(ingredient_id: int) -> bool:
+    """按 id 硬删除一枚食材(释放 uk_name 供重新收录);返回是否命中。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                "DELETE FROM ingredient WHERE id=%s", (ingredient_id,)
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
 _USER_FIELDS = ("phone", "password_hash", "nickname", "role", "status")
 _USER_SELECT = "id,phone,password_hash,nickname,role,status"
 
@@ -136,6 +184,66 @@ def find_user_by_id(user_id: int) -> dict | None:
                 f"SELECT {_USER_SELECT} FROM user WHERE id=%s LIMIT 1", (user_id,)
             )
             return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def list_users() -> list[dict]:
+    """返回全部用户(含密码哈希,展示层须脱敏),按 id 升序。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(f"SELECT {_USER_SELECT} FROM user ORDER BY id")
+            return list(cur.fetchall())
+    finally:
+        conn.close()
+
+
+_USER_WRITABLE = ("nickname", "role", "status", "password_hash")
+
+
+def update_user(user_id: int, fields: dict) -> bool:
+    """按 id 更新用户白名单字段(手机号不可改);返回是否命中。"""
+    names = [f for f in _USER_WRITABLE if f in fields]
+    if not names:
+        return False
+    assignments = ",".join(f"`{f}`=%s" for f in names)
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                f"UPDATE user SET {assignments} WHERE id=%s",
+                [fields[f] for f in names] + [user_id],
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
+def user_owns_content(user_id: int) -> bool:
+    """该用户名下是否仍有食材或菜品(删号前守卫);有任一记录返回 True。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT EXISTS(SELECT 1 FROM ingredient WHERE user_id=%s)"
+                " OR EXISTS(SELECT 1 FROM dish WHERE user_id=%s)",
+                (user_id, user_id),
+            )
+            return bool(cur.fetchone()[0])
+    finally:
+        conn.close()
+
+
+def delete_user(user_id: int) -> bool:
+    """按 id 硬删除一枚用户(调用方须先确认名下无内容);返回是否命中。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute("DELETE FROM user WHERE id=%s", (user_id,))
+        conn.commit()
+        return affected > 0
     finally:
         conn.close()
 
@@ -235,6 +343,52 @@ def update_dish_image(name: str, image: str | None) -> bool:
             affected = cur.execute(
                 "UPDATE dish SET image=%s WHERE name=%s", (image, name)
             )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
+_DISH_WRITABLE = (*_DISH_FIELDS, "image")
+
+
+def find_dish_by_id(dish_id: int) -> dict | None:
+    """按 id 查一道菜完整档案(含归属、审核状态与图片);不命中返回 None。"""
+    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_DISH_WRITABLE, "status"))
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+            cur.execute(f"SELECT {fields} FROM dish WHERE id=%s LIMIT 1", (dish_id,))
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def update_dish(dish_id: int, fields: dict) -> bool:
+    """按 id 更新菜品白名单字段(审核状态走 update_dish_status);返回是否命中。"""
+    names = [f for f in _DISH_WRITABLE if f in fields]
+    if not names:
+        return False
+    assignments = ",".join(f"`{f}`=%s" for f in names)
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute(
+                f"UPDATE dish SET {assignments} WHERE id=%s",
+                [fields[f] for f in names] + [dish_id],
+            )
+        conn.commit()
+        return affected > 0
+    finally:
+        conn.close()
+
+
+def delete_dish(dish_id: int) -> bool:
+    """按 id 硬删除一道菜(释放 uk_name 供重新生成);返回是否命中。"""
+    conn = pymysql.connect(**db_config())
+    try:
+        with conn.cursor() as cur:
+            affected = cur.execute("DELETE FROM dish WHERE id=%s", (dish_id,))
         conn.commit()
         return affected > 0
     finally:

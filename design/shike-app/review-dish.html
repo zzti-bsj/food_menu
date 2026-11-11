@@ -69,8 +69,7 @@
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     display: flex; gap: var(--s3);
     padding: var(--s3) var(--s5) calc(40px + env(safe-area-inset-bottom, 0px));
-    background: color-mix(in srgb, var(--bg) 90%, transparent);
-    backdrop-filter: blur(16px);
+    background: var(--bg);               /* 全不透明：内容滚动不透底 */
     border-top: 1px solid var(--line);
   }
   .act-bar .btn { flex: 1; height: 46px; font-size: 15px; }
@@ -89,6 +88,7 @@
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-bowl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
 </svg>
 
 <div class="phone">
@@ -158,6 +158,23 @@
           <div class="f-row">
             <span class="k">忌口提示</span>
             <div class="v muted">脾胃虚寒、易腹泻者少食；痛风急性期慎饮浓汤。</div>
+          </div>
+          <div class="f-row">
+            <span class="k">风味与文化</span>
+            <div class="v muted">story 字段 · 美食大厨出品必填；健康厨师出品为空。</div>
+          </div>
+          <div class="f-row">
+            <span class="k">菜品图片</span>
+            <div class="v" style="display:flex;align-items:center;gap:12px">
+              <span style="flex:none;width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);border:1.5px dashed var(--line-strong);color:var(--ink-3)" aria-hidden="true">
+                <svg width="20" height="20"><use href="#i-bowl"/></svg>
+              </span>
+              <span>
+                <span class="muted">默认占位图</span><br>
+                <button type="button" style="margin-top:6px;font:inherit;font-size:13px;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);border-radius:8px;padding:6px 12px;cursor:pointer">上传 / 替换图片</button>
+                <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:5px">POST /api/dish/image · 图片 URL ≤500 字</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>

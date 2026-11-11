@@ -105,6 +105,22 @@ def require_admin(view):
     return require_login(wrapper)
 
 
+def optional_login(view):
+    """可选登录:带有效 access 令牌则注入 g.current_user,否则按匿名放行(公开读接口判定私有内容可见性用)。"""
+    from shike import repository
+
+    @functools.wraps(view)
+    def wrapper(*args, **kwargs):
+        token = bearer_token()
+        payload = decode_token(token, "access") if token else None
+        user = repository.find_user_by_id(payload["sub"]) if payload else None
+        if user is not None and user.get("status") == "正常":
+            g.current_user = user
+        return view(*args, **kwargs)
+
+    return wrapper
+
+
 def current_user() -> dict | None:
     """取当前登录用户;未登录(或未经装饰器的路径)返回 None。"""
     return getattr(g, "current_user", None)

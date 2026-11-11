@@ -115,9 +115,11 @@ body {
   overscroll-behavior: contain;
   padding-bottom: 122px;   /* 悬浮 Dock 下垫 */
   scrollbar-width: none;
+  /* 裁掉 Dock 区域：内容滚到白色导航区上缘即被「吃掉」（与白色区顶缘齐平，无米色截断面） */
+  clip-path: inset(0 0 106px 0);
 }
 .screen::-webkit-scrollbar { display: none; }
-.screen.no-tabbar { padding-bottom: var(--s6); }
+.screen.no-tabbar { padding-bottom: var(--s6); clip-path: none; }
 
 .home-indicator {
   position: absolute;
@@ -140,11 +142,20 @@ body {
   display: flex;
   gap: 4px;
   padding: 8px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  backdrop-filter: blur(20px) saturate(1.5);
-  border: 1px solid rgba(255,255,255,.85);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 26px;
   box-shadow: var(--shadow-lift);
+}
+.tabbar::before {
+  /* 白色吃掉区：Dock 下方与左右的留白区渲染为白色，与 Dock 融为一体；
+     内容滚入此区域即被「吃掉」。顶部左右圆弧呼应 Dock 圆角。 */
+  content: "";
+  position: absolute;
+  left: -14px; right: -14px; top: -6px; bottom: -22px;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  z-index: -1;
 }
 .tabbar a {
   flex: 1;
@@ -273,26 +284,18 @@ body {
 .section { margin-top: var(--s6); }
 .section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   padding: 0 var(--s5);
-  margin-bottom: var(--s3);
+  margin-bottom: var(--s2);
 }
 .section-head h2 {
-  font-family: var(--font-display);
-  font-size: 20px;
+  /* 组标签（eyebrow）：安静的小节标签，层级由留白与卡片分组承担 */
+  font-family: var(--font-body);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: .5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.section-head h2::before {    /* 标题前朱砂点 */
-  content: "";
-  width: 5px; height: 5px;
-  background: var(--seal);
-  transform: rotate(45deg);
-  opacity: .85;
+  letter-spacing: 1px;
+  color: var(--ink-3);
 }
 .section-head .more {
   font-size: 13px;

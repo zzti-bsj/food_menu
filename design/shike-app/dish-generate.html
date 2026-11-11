@@ -6,16 +6,56 @@
 <title>食刻 · 菜品生成</title>
 <link rel="stylesheet" href="assets/theme.css">
 <style>
-  /* —— 页面级样式（菜品生成：候选池 → 健康厨师 → 校验核验 → 入库）—— */
+  /* —— 页面级样式（菜品生成 v1.4.1：单入口 · 双厨师 · 可切换）
+     同一接口 POST /api/dishes：
+     · 默认（健康厨师）：{"ingredients":[非空数组]} → 四 stage
+     · {"chef":"cuisine","mode":"cuisine/name/ingredient"} → 六 stage；story 必填；cuisine 模式 excluded 必空 */
   .block { margin: 0 var(--s5) var(--s3); }
   .block-label {
     font-size: 13px; color: var(--ink-3);
     margin-bottom: var(--s2);
   }
 
-  /* 候选池 */
+  /* 出品厨师选择（可点切换） */
   .pool-card { padding: var(--s3) var(--s4) var(--s4); }
-  .pool-card .picked { display: flex; gap: var(--s2); flex-wrap: wrap; }
+  .chef-seg { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+  .cs-item {
+    position: relative;
+    display: flex; flex-direction: column; gap: 3px;
+    text-align: left;
+    background: var(--surface);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
+    padding: 12px 12px;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    transition: all var(--dur) var(--ease);
+  }
+  .cs-item[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .cs-item b { font-size: 15px; font-weight: 700; color: var(--ink-2); }
+  .cs-item[aria-pressed="true"] b { color: var(--accent-deep); }
+  .cs-item span { font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+  .cs-item .cs-mark {
+    position: absolute; top: 10px; right: 10px;
+    width: 20px; height: 20px;
+    border-radius: 999px;
+    display: none;
+    place-items: center;
+    background: var(--accent);
+    color: #fff;
+  }
+  .cs-item[aria-pressed="true"] .cs-mark { display: grid; }
+  .cs-cuisine[aria-pressed="true"] { background: var(--autumn-soft); border-color: color-mix(in srgb, var(--autumn) 45%, transparent); }
+  .cs-cuisine[aria-pressed="true"] b { color: var(--autumn-deep); }
+  .cs-cuisine[aria-pressed="true"] .cs-mark { background: var(--autumn); }
+
+  /* 候选池 / 输入 */
+  .picked { display: flex; gap: var(--s2); flex-wrap: wrap; }
   .pick {
     display: inline-flex; align-items: center; gap: 6px;
     background: var(--accent-soft);
@@ -31,31 +71,116 @@
     color: var(--ink-3);
     background: none;
   }
-  .pool-card .free-input {
+  .free-input {
     margin-top: var(--s3);
-    font-size: 13px; color: var(--ink-3);
     display: flex; gap: 8px; align-items: center;
     background: var(--surface-2);
     border: 1px dashed var(--line-strong);
     border-radius: 10px;
     padding: 9px 12px;
+    font-size: 13px; color: var(--ink-3);
+  }
+  .rule-note {
+    margin-top: var(--s2);
+    font-size: 12px; color: var(--ink-3);
+    display: flex; align-items: flex-start; gap: 6px;
+    line-height: 1.6;
+  }
+  .rule-note svg { flex: none; margin-top: 2px; }
+
+  /* 菜名输入 */
+  .name-field { margin-top: var(--s1); }
+  .name-field label {
+    display: block;
+    font-size: 13px; font-weight: 700; color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+  .name-field label em { font-style: normal; color: var(--danger); margin-left: 2px; }
+  .name-input {
+    height: 48px;
+    padding: 0 var(--s3);
+    background: var(--surface);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
+    font: inherit; font-size: 16px;
+    color: var(--ink);
+    width: 100%;
+  }
+  .name-input:focus { outline: none; border-color: var(--accent); }
+  .name-input::placeholder { color: var(--ink-3); }
+
+  /* 生成模式 segmented */
+  .mode-seg {
+    display: flex; gap: 4px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .mode-seg button {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: all var(--dur) var(--ease);
+  }
+  .mode-seg button[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(38,35,28,.12);
+  }
+  .mode-hint { font-size: 12px; color: var(--ink-3); margin-top: var(--s2); line-height: 1.6; }
+  .cuisine-note {
+    margin-top: var(--s2);
+    font-size: 12px; line-height: 1.6; color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 11px;
   }
 
-  /* 结果封面 */
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .running-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: var(--s2) var(--s5) 0;
+    font-size: 13px; color: var(--ink-3);
+    line-height: 1.6;
+  }
+  .running-note svg { flex: none; margin-top: 2px; }
+
+  /* 结果 */
+  .result-head {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin: 0 var(--s5) var(--s2);
+  }
+  .result-cap { font-size: 12px; color: var(--ink-3); align-self: center; }
+  .stage-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 800;
+    border-radius: 999px; padding: 5px 10px;
+  }
+  .sb-inserted { background: var(--spring-soft); color: var(--spring-deep); }
+  .sb-verify { background: var(--winter-soft); color: var(--winter-deep); }
+
   .result-cover {
-    position: relative;
+    margin: 0 var(--s5) var(--s3);
     border-radius: var(--r-l);
     border: 1px solid rgba(255,255,255,.9);
     box-shadow: var(--shadow-card);
     padding: var(--s5);
+    position: relative;
     overflow: hidden;
-    margin: 0 var(--s5) var(--s3);
   }
   .result-cover h2 {
     font-family: var(--font-display);
     font-size: 24px; font-weight: 600; letter-spacing: 2px;
     color: var(--ink);
-    max-width: 200px;
+    max-width: 210px;
   }
   .result-cover .r-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3); }
   .r-chip {
@@ -65,7 +190,13 @@
     border-radius: 8px; padding: 5px 8px;
     color: var(--ink-2);
   }
-  .r-chip.chef { background: var(--seal); border-color: var(--seal); color: #fff; }
+  .r-chip.chef-health { background: var(--seal); border-color: var(--seal); color: #fff; }
+  .r-chip.chef-cuisine {
+    background: linear-gradient(150deg, #F2B33C 0%, #E8912A 100%);
+    border-color: #E8912A;
+    color: #4A3208;
+    box-shadow: 0 2px 6px rgba(232,145,42,.3);
+  }
   .result-cover .go {
     position: absolute; right: var(--s5); bottom: var(--s5);
     font-size: 13px; font-weight: 700;
@@ -75,30 +206,96 @@
     padding: 8px 0 8px 8px;
   }
 
-  /* 过程透明卡 */
-  .trace-card { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
-  .trace-row { display: flex; gap: var(--s3); align-items: flex-start; }
-  .trace-row .t-icon {
-    flex: none;
-    width: 34px; height: 34px;
-    border-radius: 10px;
-    display: grid; place-items: center;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    color: var(--ink-2);
+  /* story 卡（美食大厨必填） */
+  .story-card {
+    position: relative;
+    border-left: 3px solid var(--amber);
+    background: linear-gradient(150deg, #FFF7E6 0%, var(--surface) 55%);
+    border-radius: 0 var(--r-m) var(--r-m) 0;
+    padding: var(--s4);
+    padding-left: 44px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
   }
-  .trace-row h3 { font-size: 14px; font-weight: 700; }
-  .trace-row p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-top: 3px; }
-  .trace-row p em { font-style: normal; color: var(--ink-3); }
+  .story-card::before {
+    content: "味";
+    position: absolute;
+    left: 10px; top: 10px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--amber-deep);
+    opacity: .9;
+    line-height: 1;
+  }
+  .story-card h3 { font-size: 13px; font-weight: 700; color: var(--amber-deep); letter-spacing: 1px; }
+  .story-card p {
+    font-family: var(--font-display);
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--ink);
+    margin-top: 6px;
+  }
 
-  /* 三态判定 */
-  .verdict {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; font-weight: 800;
-    border-radius: 999px; padding: 7px 12px;
+  /* 字段卡 */
+  .f-card { padding: var(--s2) var(--s4); }
+  .f-row {
+    display: flex; align-items: flex-start; gap: var(--s3);
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
   }
-  .v-pass { background: var(--spring-soft); color: var(--spring-deep); }
-  .v-rev  { background: var(--surface-2); color: var(--ink-3); font-weight: 600; }
+  .f-row:last-child { border-bottom: none; }
+  .f-row .k {
+    flex: none; width: 96px;
+    font-size: 11px; font-weight: 700;
+    color: var(--ink-3);
+    padding-top: 3px;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+  .f-row .v { flex: 1; min-width: 0; line-height: 1.7; color: var(--ink); }
+  .f-row .v .muted { color: var(--ink-2); }
+
+  /* excluded / 规则 */
+  .excl-row {
+    display: flex; gap: var(--s3); align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
+  }
+  .excl-row:last-child { border-bottom: none; }
+  .excl-row .x {
+    flex: none;
+    font-size: 11px; font-weight: 800;
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-radius: 6px; padding: 3px 7px;
+    margin-top: 1px;
+  }
+  .excl-row b { font-weight: 700; }
+  .excl-row p { color: var(--ink-2); line-height: 1.7; margin-top: 2px; }
+
+  .rule-card { padding: var(--s3) var(--s4); }
+  .rule-row {
+    display: flex; gap: var(--s3); align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px; line-height: 1.7;
+  }
+  .rule-row:last-child { border-bottom: none; }
+  .rule-row .tag {
+    flex: none;
+    font-size: 11px; font-weight: 800;
+    border-radius: 6px; padding: 3px 7px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tag-dup { background: var(--winter-soft); color: var(--winter-deep); }
+  .tag-inv { background: var(--autumn-soft); color: var(--autumn-deep); }
+  .tag-rej { background: var(--danger-soft); color: var(--danger); }
+  .tag-nf { background: var(--warning-soft); color: var(--warning); }
+  .rule-row p { color: var(--ink-2); }
+  .rule-row p b { color: var(--ink); }
 
   .hint { margin: var(--s4) var(--s5) 0; font-size: 13px; line-height: 1.7; color: var(--ink-3); }
 </style>
@@ -108,13 +305,13 @@
 <svg style="display:none" aria-hidden="true">
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
-  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
-  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8V4z"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
   <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.3a2 2 0 0 0 1.5 1.5L22 12l-6.3 2.2a2 2 0 0 0-1.5 1.5L12 22l-2.2-6.3a2 2 0 0 0-1.5-1.5L2 12l6.3-2.2a2 2 0 0 0 1.5-1.5L12 2z"/></symbol>
   <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-hat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13.6A4 4 0 0 1 6.7 5.7 5 5 0 0 1 12 3a5 5 0 0 1 5.3 2.7 4 4 0 0 1 .7 7.9"/><path d="M6 13.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5.5"/><path d="M6 17h12"/></symbol>
 </svg>
 
 <div class="phone">
@@ -135,81 +332,371 @@
       <h1 style="font-family:var(--font-display);font-size:20px;font-weight:600">菜品生成</h1>
     </header>
 
-    <!-- 候选池 -->
+    <!-- 出品厨师（点选切换，同一接口） -->
     <div class="block">
-      <p class="block-label">候选食材（搭配合理可组合，不合适可弃置，至少用一个）</p>
-      <div class="card pool-card">
-        <div class="picked">
-          <span class="pick">白萝卜 <i aria-hidden="true">✕</i></span>
-          <span class="pick">鸡腿肉 <i aria-hidden="true">✕</i></span>
-          <span class="pick">枸杞 <i aria-hidden="true">✕</i></span>
-          <span class="pick">雪梨 <i aria-hidden="true">✕</i></span>
-          <button class="pick pick-add" type="button">
-            <svg width="14" height="14" aria-hidden="true"><use href="#i-plus"/></svg>
-            从库内添加
+      <p class="block-label">出品厨师 · dish.category（词表双值，点选切换表单）</p>
+      <div class="card pool-card" style="padding-bottom:var(--s3)">
+        <div class="chef-seg">
+          <button class="cs-item" type="button" data-chef-btn="health" aria-pressed="true">
+            <b>健康厨师</b>
+            <span>减脂低卡线 · 候选食材出一道低卡菜</span>
+            <span class="cs-mark" aria-hidden="true"><svg width="12" height="12"><use href="#i-check"/></svg></span>
+          </button>
+          <button class="cs-item cs-cuisine" type="button" data-chef-btn="cuisine" aria-pressed="false">
+            <b>美食大厨</b>
+            <span>家常与各地菜系线 · 三种生成模式</span>
+            <span class="cs-mark" aria-hidden="true"><svg width="12" height="12"><use href="#i-check"/></svg></span>
           </button>
         </div>
-        <p class="free-input">
-          <svg width="14" height="14" aria-hidden="true"><use href="#i-search"/></svg>
-          也可直接输入库外食材 · 库内食材会自动注入性味归经档案
+      </div>
+    </div>
+
+    <!-- ================= 健康厨师表单 ================= -->
+    <div data-chef-panel="health">
+      <div class="block">
+        <p class="block-label">候选食材 · 对应请求体 ingredients 数组（至少 1 项，自动去重保序）</p>
+        <div class="card pool-card">
+          <div class="picked">
+            <span class="pick">白萝卜 <i aria-hidden="true">✕</i></span>
+            <span class="pick">鸡腿肉 <i aria-hidden="true">✕</i></span>
+            <span class="pick">枸杞 <i aria-hidden="true">✕</i></span>
+            <span class="pick">雪梨 <i aria-hidden="true">✕</i></span>
+            <button class="pick pick-add" type="button">
+              <svg width="14" height="14" aria-hidden="true"><use href="#i-plus"/></svg>
+              从库内添加
+            </button>
+          </div>
+          <p class="free-input">
+            <svg width="14" height="14" aria-hidden="true"><use href="#i-search"/></svg>
+            输入库外食材名回车加入 · 库内食材自动注入性味归经档案（pantry）
+          </p>
+          <p class="rule-note">
+            <svg width="13" height="13" aria-hidden="true"><use href="#i-alert"/></svg>
+            传 0 项接口返回 400「ingredients 须为非空字符串数组」
+          </p>
+        </div>
+        <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-spark"/></svg>
+          健康厨师 · 生成菜品
+        </button>
+        <p class="running-note">
+          <svg width="14" height="14" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-alert"/></svg>
+          一次运行含最多 3 轮「校验反馈 → 修订重试」
         </p>
       </div>
-      <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
-        <svg width="16" height="16" aria-hidden="true"><use href="#i-spark"/></svg>
-        健康厨师 · 生成菜品
-      </button>
+
+      <!-- 结果（健康厨师完成态） -->
+      <div class="result-head">
+        <span class="stage-badge sb-inserted"><svg width="13" height="13" aria-hidden="true"><use href="#i-check"/></svg> stage = inserted</span>
+        <span class="stage-badge sb-verify">核验 pass · 修订 0 轮</span>
+        <span class="result-cap">示例结果</span>
+      </div>
+      <div class="result-cover panel-pop winter">
+        <h2>白萝卜炖鸡汤</h2>
+        <div class="r-chips">
+          <span class="r-chip chef-health">健康厨师</span>
+          <span class="r-chip">家常 · 炖</span>
+          <span class="r-chip"><svg width="12" height="12" style="vertical-align:-1px" aria-hidden="true"><use href="#i-flame"/></svg> 约350千卡</span>
+          <span class="r-chip">立冬 · 小雪</span>
+        </div>
+        <a class="go" href="review-dish.html">去审核 <svg width="13" height="13" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      </div>
+
+      <section class="block" aria-labelledby="sec-h-fields">
+        <p class="block-label" id="sec-h-fields">落库字段预览 · dish 表全列（含 remark）</p>
+        <div class="card f-card">
+          <div class="f-row">
+            <span class="k">category</span>
+            <div class="v">健康厨师</div>
+          </div>
+          <div class="f-row">
+            <span class="k">main_ingredients</span>
+            <div class="v">白萝卜 半根, 鸡腿肉（去皮） 1块</div>
+          </div>
+          <div class="f-row">
+            <span class="k">extras</span>
+            <div class="v">姜 3片, 枸杞 10粒, 盐 2g, 生抽 5ml, 小葱 1根</div>
+          </div>
+          <div class="f-row">
+            <span class="k">steps</span>
+            <div class="v muted">编号分行 5 步 · 刀工/火候/调味时机写入步骤（详情见审核页）</div>
+          </div>
+          <div class="f-row">
+            <span class="k">calories</span>
+            <div class="v">约350千卡</div>
+          </div>
+          <div class="f-row">
+            <span class="k">style</span>
+            <div class="v">家常, 炖</div>
+          </div>
+          <div class="f-row">
+            <span class="k">solar_terms</span>
+            <div class="v">立冬, 小雪 <span style="color:var(--ink-3)">（升序 ✓）</span></div>
+          </div>
+          <div class="f-row">
+            <span class="k">caution</span>
+            <div class="v muted">脾胃虚寒者少食；痛风急性期慎饮浓汤。</div>
+          </div>
+          <div class="f-row">
+            <span class="k">excluded</span>
+            <div class="excl-row" style="padding:4px 0 0;border:none;width:100%">
+              <span class="x">弃置</span>
+              <div><b>雪梨</b><p>炖煮后甜腻突兀，与咸鲜主体风味失衡。</p></div>
+            </div>
+          </div>
+          <div class="f-row">
+            <span class="k">remark</span>
+            <div class="v" style="color:var(--ink-3)">空 · 核验 pass，无存疑</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="sec-h-alt">
+        <p class="block-label" id="sec-h-alt">其余返回形态（示例文案）</p>
+        <div class="card rule-card">
+          <div class="rule-row">
+            <span class="tag tag-dup">duplicate</span>
+            <p><b>菜名已存在</b>：与 dish 表 uk_name 唯一键冲突，未入库；换食材组合或改名后重试。</p>
+          </div>
+          <div class="rule-row">
+            <span class="tag tag-inv">invalid</span>
+            <p><b>结构 / 词表校验未过</b>：errors 逐条回传作反馈，自动带反馈修订重试（≤3 轮）。</p>
+          </div>
+          <div class="rule-row">
+            <span class="tag tag-rej">rejected</span>
+            <p><b>相克 / 安全核验未过</b>：problems 回传作反馈重试；仍失败则不入库，整次运行记入判否日志。</p>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- 生成结果（完成态示例） -->
-    <div class="result-cover panel-pop winter">
-      <p style="font-size:12px;font-weight:700;color:var(--spring-deep);background:var(--spring-soft);border-radius:999px;display:inline-flex;align-items:center;gap:5px;padding:5px 10px">
-        <svg width="13" height="13" aria-hidden="true"><use href="#i-check"/></svg>
-        核验通过 · 已入库待审核
-      </p>
-      <h2 style="margin-top:var(--s3)">白萝卜炖鸡汤</h2>
-      <div class="r-chips">
-        <span class="r-chip chef">健康厨师</span>
-        <span class="r-chip">家常 · 炖</span>
-        <span class="r-chip"><svg width="12" height="12" style="vertical-align:-1px" aria-hidden="true"><use href="#i-flame"/></svg> 约350千卡</span>
-        <span class="r-chip">立冬 · 小雪</span>
+    <!-- ================= 美食大厨表单 ================= -->
+    <div data-chef-panel="cuisine" hidden>
+      <!-- 三模式 -->
+      <div class="block">
+        <p class="block-label">生成模式 · 三选一（对应请求体 mode 字段）</p>
+        <div class="mode-seg" role="tablist" aria-label="生成模式">
+          <button role="tab" aria-selected="true" data-mode-btn="cuisine">按菜系</button>
+          <button role="tab" aria-selected="false" data-mode-btn="name">按菜名</button>
+          <button role="tab" aria-selected="false" data-mode-btn="ingredient">按食材</button>
+        </div>
+        <p class="mode-hint" data-mode-hint="cuisine">当前 · 按菜系：选一个菜系，大厨出一道该菜系的代表菜；该菜系已收录菜名会注入提示词，避免重复。</p>
+        <p class="mode-hint" data-mode-hint="name" hidden>当前 · 按菜名：传单个菜名，大厨复刻这道菜的可在家做法；提交前先查库防重。</p>
+        <p class="mode-hint" data-mode-hint="ingredient" hidden>当前 · 按食材：候选食材出菜，大厨按菜系风格取舍，弃置会给原因。</p>
       </div>
-      <a class="go" href="review-dish.html">去审核 <svg width="13" height="13" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+
+      <!-- 按菜系 -->
+      <div class="block" data-mode-panel="cuisine">
+        <p class="block-label">选择菜系 · 词表 18 项（GET /api/cuisines）</p>
+        <div class="card pool-card" style="padding-bottom:var(--s4)">
+          <div class="chips" style="padding:0">
+            <button class="chip" aria-pressed="false">鲁菜</button>
+            <button class="chip" aria-pressed="false">川菜</button>
+            <button class="chip" aria-pressed="true">粤菜</button>
+            <button class="chip" aria-pressed="false">苏菜</button>
+            <button class="chip" aria-pressed="false">家常菜</button>
+            <button class="chip" aria-pressed="false">东北菜</button>
+            <button class="chip" aria-pressed="false">日式</button>
+            <button class="chip" aria-pressed="false">西餐</button>
+            <button class="chip" aria-pressed="false">全部 18 菜系 ⌄</button>
+          </div>
+          <p class="cuisine-note">粤菜 · 清鲜嫩滑爽，重本味，白灼、煲汤、烧腊见长。所选菜系将作为 style 第一段写入。</p>
+        </div>
+        <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-spark"/></svg>
+          美食大厨 · 生成
+        </button>
+        <p class="running-note">
+          <svg width="14" height="14" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-alert"/></svg>
+          核验维度：正宗 / 安全 / 造假 / 可执行；一次运行含最多 3 轮修订重试
+        </p>
+      </div>
+
+      <!-- 按菜名 -->
+      <div class="block" data-mode-panel="name" hidden>
+        <p class="block-label">菜名 · 单个菜名，复刻其可在家做法</p>
+        <div class="card pool-card">
+          <div class="name-field">
+            <label for="c-name">菜名<em aria-hidden="true">*</em></label>
+            <input class="name-input" id="c-name" type="text" maxlength="100" placeholder="如：宫保鸡丁" value="宫保鸡丁">
+            <p class="rule-note">
+              <svg width="13" height="13" aria-hidden="true"><use href="#i-alert"/></svg>
+              ≤100 字 · 不能包含逗号、顿号、斜杠等分隔符（只允许单个菜名）
+            </p>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-spark"/></svg>
+          美食大厨 · 生成
+        </button>
+        <p class="running-note">
+          <svg width="14" height="14" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-alert"/></svg>
+          提交前先查库：同名已存在直接返回 duplicate；大厨无法确认这道菜时返回 not_found（记日志，不入库）。
+        </p>
+      </div>
+
+      <!-- 按食材 -->
+      <div class="block" data-mode-panel="ingredient" hidden>
+        <p class="block-label">候选食材 · 大厨按菜系风格取舍，弃置给原因</p>
+        <div class="card pool-card">
+          <div class="picked">
+            <span class="pick">虾仁 <i aria-hidden="true">✕</i></span>
+            <span class="pick">西芹 <i aria-hidden="true">✕</i></span>
+            <span class="pick">腰果 <i aria-hidden="true">✕</i></span>
+            <button class="pick pick-add" type="button">
+              <svg width="14" height="14" aria-hidden="true"><use href="#i-plus"/></svg>
+              从库内添加
+            </button>
+          </div>
+          <p class="free-input">
+            <svg width="14" height="14" aria-hidden="true"><use href="#i-search"/></svg>
+            输入库外食材名回车加入 · 库内食材自动注入性味归经档案（pantry）
+          </p>
+          <p class="rule-note">
+            <svg width="13" height="13" aria-hidden="true"><use href="#i-alert"/></svg>
+            与健康厨师同构：非空数组去重保序，0 项返回 400
+          </p>
+        </div>
+        <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-spark"/></svg>
+          美食大厨 · 生成
+        </button>
+      </div>
+
+      <!-- 结果（美食大厨完成态：按菜系） -->
+      <div class="result-head">
+        <span class="stage-badge sb-inserted"><svg width="13" height="13" aria-hidden="true"><use href="#i-check"/></svg> stage = inserted</span>
+        <span class="stage-badge sb-verify">核验 pass · 修订 0 轮</span>
+        <span class="result-cap">示例结果 · 按菜系</span>
+      </div>
+      <div class="result-cover panel-pop autumn">
+        <h2>豉汁蒸排骨</h2>
+        <div class="r-chips">
+          <span class="r-chip chef-cuisine">美食大厨</span>
+          <span class="r-chip">粤菜 · 蒸</span>
+          <span class="r-chip"><svg width="12" height="12" style="vertical-align:-1px" aria-hidden="true"><use href="#i-flame"/></svg> 约420千卡</span>
+          <span class="r-chip">立冬 · 小雪</span>
+        </div>
+        <a class="go" href="review-dish.html">去审核 <svg width="13" height="13" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      </div>
+
+      <section class="block" aria-labelledby="sec-story">
+        <p class="block-label" id="sec-story">story · 风味与文化背景（美食大厨必填，落库字段）</p>
+        <div class="page-pad">
+          <div class="story-card">
+            <h3>风味与文化</h3>
+            <p>广式茶楼的早茶名物。豆豉的咸鲜一步步渗入排骨，垫底芋薯吸饱肉汁——「一盅两件」里最接地气的荤菜；蒸功到位则肉滑骨离、豉香扑鼻。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="sec-c-fields">
+        <p class="block-label" id="sec-c-fields">落库字段预览 · dish 表全列（含 story / remark / image）</p>
+        <div class="card f-card">
+          <div class="f-row">
+            <span class="k">category</span>
+            <div class="v">美食大厨</div>
+          </div>
+          <div class="f-row">
+            <span class="k">main_ingredients</span>
+            <div class="v">猪肋排 300g, 豆豉 10g, 蒜 2瓣</div>
+          </div>
+          <div class="f-row">
+            <span class="k">extras</span>
+            <div class="v">生抽 10ml, 蚝油 5ml, 糖 3g, 生粉 5g, 葱花 少许</div>
+          </div>
+          <div class="f-row">
+            <span class="k">steps</span>
+            <div class="v muted">编号分行 6 步 · 排骨腌制时机、豆豉爆香火候、大火足汽蒸制（详情见审核页）</div>
+          </div>
+          <div class="f-row">
+            <span class="k">calories</span>
+            <div class="v">约420千卡</div>
+          </div>
+          <div class="f-row">
+            <span class="k">style</span>
+            <div class="v">粤菜, 蒸 <span style="color:var(--ink-3)">（第一段须为所选菜系 ✓）</span></div>
+          </div>
+          <div class="f-row">
+            <span class="k">solar_terms</span>
+            <div class="v">立冬, 小雪 <span style="color:var(--ink-3)">（升序 ✓）</span></div>
+          </div>
+          <div class="f-row">
+            <span class="k">caution</span>
+            <div class="v muted">排骨脂肪较高，减脂期适量；痛风急性期慎食。</div>
+          </div>
+          <div class="f-row">
+            <span class="k">excluded</span>
+            <div class="v" style="color:var(--ink-3)">空 · 按菜系模式不弃置食材（校验强制为空数组）</div>
+          </div>
+          <div class="f-row">
+            <span class="k">remark</span>
+            <div class="v" style="color:var(--ink-3)">空 · 核验 pass，无存疑</div>
+          </div>
+          <div class="f-row">
+            <span class="k">image</span>
+            <div class="v" style="color:var(--ink-3)">空 · 可在上传图片（POST /api/dish/image）</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="sec-c-alt">
+        <p class="block-label" id="sec-c-alt">其余返回形态（示例文案）</p>
+        <div class="card rule-card">
+          <div class="rule-row">
+            <span class="tag tag-inv">invalid_input</span>
+            <p><b>输入不合法</b>：未知模式 / 菜名为空、过长或含分隔符 / 菜系不在词表 / ingredients 非空数组校验失败 —— 直接返回 reason，不进流水线。</p>
+          </div>
+          <div class="rule-row">
+            <span class="tag tag-dup">duplicate</span>
+            <p><b>菜名已存在</b>：按菜名模式提交前查库命中（不入库）。</p>
+          </div>
+          <div class="rule-row">
+            <span class="tag tag-nf">not_found</span>
+            <p><b>无法确认这道菜</b>：按菜名模式，大厨确认不了做法或出处（不入库，记入判否日志）。</p>
+          </div>
+          <div class="rule-row">
+            <span class="tag tag-rej">invalid / rejected</span>
+            <p><b>校验或核验未过</b>：errors / problems 回传作反馈，自动带反馈修订重试（≤3 轮）；仍失败不入库，记入判否日志。</p>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- 过程透明卡（临时展示，不落库） -->
-    <section class="block" aria-labelledby="sec-trace">
-      <p class="block-label" id="sec-trace">过程信息 · 仅本次展示，不入库</p>
-      <div class="card trace-card">
-        <div class="trace-row">
-          <span class="t-icon" aria-hidden="true">池</span>
-          <div>
-            <h3>候选池 4 · 采用 3 · 弃置 1</h3>
-            <p>白萝卜、鸡腿肉、枸杞入菜；<em>雪梨弃置 —— 炖煮后甜腻突兀，与咸鲜主体风味失衡。</em></p>
-          </div>
-        </div>
-        <div class="trace-row">
-          <span class="t-icon" aria-hidden="true">档</span>
-          <div>
-            <h3>库内档案注入</h3>
-            <p>白萝卜「性凉 · 降气化痰」、鸡腿肉「甘温 · 温中益气」已注入提示词，作为搭配依据。</p>
-          </div>
-        </div>
-        <div class="trace-row">
-          <span class="t-icon" aria-hidden="true">验</span>
-          <div>
-            <h3>校验与核验</h3>
-            <p>结构 + 词表值域一次通过；相克/安全核验 <span class="verdict v-pass" style="padding:3px 9px;font-size:12px">pass</span>
-               <span class="verdict v-rev" style="padding:3px 9px;font-size:12px">修订轮 0/3</span></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <p class="hint">示例数据 · 真实调用 POST /api/dishes（返回 stage / dish / excluded / doubts），存疑问题会写入菜品备注字段并记入日志。</p>
+    <p class="hint">
+      界面为完成态示例；真实调用 POST /api/dishes —— 健康厨师默认分支传 ingredients 数组；美食大厨传
+      {"chef":"cuisine","mode":"cuisine/name/ingredient", ...}。存疑入库时 doubts 写入 remark 并回传。
+    </p>
   </div>
 
   <div class="home-indicator" aria-hidden="true"></div>
 </div>
+
+<script>
+  // 出品厨师切换：点选卡片 → 切换表单与结果区
+  const chefBtns = document.querySelectorAll('[data-chef-btn]');
+  const chefPanels = document.querySelectorAll('[data-chef-panel]');
+  chefBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.chefBtn;
+      chefBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.chefBtn === target)));
+      chefPanels.forEach(p => { p.hidden = p.dataset.chefPanel !== target; });
+    });
+  });
+
+  // 美食大厨三模式切换：点选 Tab → 切换输入面板与提示
+  const modeBtns = document.querySelectorAll('[data-mode-btn]');
+  const modePanels = document.querySelectorAll('[data-mode-panel]');
+  const modeHints = document.querySelectorAll('[data-mode-hint]');
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.modeBtn;
+      modeBtns.forEach(b => b.setAttribute('aria-selected', String(b.dataset.modeBtn === target)));
+      modePanels.forEach(p => { p.hidden = p.dataset.modePanel !== target; });
+      modeHints.forEach(h => { h.hidden = h.dataset.modeHint !== target; });
+    });
+  });
+</script>
 
 </body>
 </html>
