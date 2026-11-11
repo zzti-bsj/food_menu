@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 全年节气</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（全年节气页 v1.1）—— */
+  .note {
+    padding: 0 var(--s5);
+    font-size: 13px; line-height: 1.7; color: var(--ink-3);
+  }
+
+  .season { margin-top: var(--s5); }
+  .season-head {
+    margin: 0 var(--s5);
+    border-radius: 18px;
+    padding: 14px var(--s4);
+    display: flex; align-items: center; gap: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(255,255,255,.85);
+  }
+  .season-head::after {         /* 云弧纹样（装饰） */
+    content: "";
+    position: absolute;
+    right: -26px; top: -30px;
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,.9);
+  }
+  .season-head h2 {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 700; letter-spacing: 3px;
+  }
+  .season-head span {
+    font-size: 12px; font-weight: 700;
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-left: auto;
+    box-shadow: 0 2px 6px rgba(38,35,28,.10);
+  }
+  .sh-spring { background: linear-gradient(120deg, #DFF2E6 0%, #CBF0DA 100%); color: var(--spring-deep); }
+  .sh-summer { background: linear-gradient(120deg, #FBE7DF 0%, #F9D9CB 100%); color: var(--summer-deep); }
+  .sh-autumn { background: linear-gradient(120deg, #FBF0DA 0%, #F6E3BC 100%); color: var(--autumn-deep); }
+  .sh-winter { background: linear-gradient(120deg, #DFF0F9 0%, #CCE6F5 100%); color: var(--winter-deep); }
+
+  .term-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s2);
+    padding: var(--s3) var(--s5) 0;
+  }
+  .term-cell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--line);
+    border-radius: var(--r-m);
+    padding: 14px 12px 12px;
+    display: flex; flex-direction: column; gap: 3px;
+    box-shadow: var(--shadow-card);
+  }
+  .term-cell b {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 600; letter-spacing: 2px;
+  }
+  .term-cell small { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .season-spring .term-cell { border-top-color: var(--spring); }
+  .season-summer .term-cell { border-top-color: var(--summer); }
+  .season-autumn .term-cell { border-top-color: var(--autumn); }
+  .season-winter .term-cell { border-top-color: var(--winter); }
+
+  .term-cell.is-now {
+    background: linear-gradient(150deg, #3D5A7E 0%, var(--accent-deep) 100%);
+    border-color: var(--accent-deep);
+    border-top-color: #E8B04B;
+    color: #fff;
+    position: relative;
+    box-shadow: 0 6px 18px rgba(31,50,74,.36);
+  }
+  .term-cell.is-now b, .term-cell.is-now small { color: #fff; }
+  .term-cell.is-now::after {
+    content: "今";
+    position: absolute; top: 8px; right: 8px;
+    font-size: 10px; line-height: 1;
+    padding: 4px 5px; border-radius: 6px;
+    background: #E8B04B; color: #4A3208;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="home.html" aria-label="返回今日">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <h1>全年节气</h1>
+    </header>
+
+    <p class="note">以当前节气为中心 ±2 共 5 个节气为「当令」，首页与菜谱默认按此推荐。</p>
+
+    <!-- 春 -->
+    <section class="season season-spring" aria-labelledby="s-spring">
+      <div class="season-head sh-spring">
+        <h2 id="s-spring">春 · 生发</h2><span>2–4月</span>
+      </div>
+      <div class="term-grid">
+        <div class="term-cell"><b>立春</b><small>第1 · 2月</small></div>
+        <div class="term-cell"><b>雨水</b><small>第2 · 2月</small></div>
+        <div class="term-cell"><b>惊蛰</b><small>第3 · 3月</small></div>
+        <div class="term-cell"><b>春分</b><small>第4 · 3月</small></div>
+        <div class="term-cell"><b>清明</b><small>第5 · 4月</small></div>
+        <div class="term-cell"><b>谷雨</b><small>第6 · 4月</small></div>
+      </div>
+    </section>
+
+    <!-- 夏 -->
+    <section class="season season-summer" aria-labelledby="s-summer">
+      <div class="season-head sh-summer">
+        <h2 id="s-summer">夏 · 蕃长</h2><span>5–7月</span>
+      </div>
+      <div class="term-grid">
+        <div class="term-cell"><b>立夏</b><small>第7 · 5月</small></div>
+        <div class="term-cell"><b>小满</b><small>第8 · 5月</small></div>
+        <div class="term-cell"><b>芒种</b><small>第9 · 6月</small></div>
+        <div class="term-cell"><b>夏至</b><small>第10 · 6月</small></div>
+        <div class="term-cell"><b>小暑</b><small>第11 · 7月</small></div>
+        <div class="term-cell"><b>大暑</b><small>第12 · 7月</small></div>
+      </div>
+    </section>
+
+    <!-- 秋 -->
+    <section class="season season-autumn" aria-labelledby="s-autumn">
+      <div class="season-head sh-autumn">
+        <h2 id="s-autumn">秋 · 收敛</h2><span>8–10月</span>
+      </div>
+      <div class="term-grid">
+        <div class="term-cell"><b>立秋</b><small>第13 · 8月</small></div>
+        <div class="term-cell"><b>处暑</b><small>第14 · 8月</small></div>
+        <div class="term-cell"><b>白露</b><small>第15 · 9月</small></div>
+        <div class="term-cell"><b>秋分</b><small>第16 · 9月</small></div>
+        <div class="term-cell"><b>寒露</b><small>第17 · 10月</small></div>
+        <div class="term-cell"><b>霜降</b><small>第18 · 10月</small></div>
+      </div>
+    </section>
+
+    <!-- 冬 -->
+    <section class="season season-winter" aria-labelledby="s-winter">
+      <div class="season-head sh-winter">
+        <h2 id="s-winter">冬 · 闭藏</h2><span>11–1月</span>
+      </div>
+      <div class="term-grid">
+        <div class="term-cell is-now"><b>立冬</b><small>第19 · 11月</small></div>
+        <div class="term-cell"><b>小雪</b><small>第20 · 11月</small></div>
+        <div class="term-cell"><b>大雪</b><small>第21 · 12月</small></div>
+        <div class="term-cell"><b>冬至</b><small>第22 · 12月</small></div>
+        <div class="term-cell"><b>小寒</b><small>第23 · 1月</small></div>
+        <div class="term-cell"><b>大寒</b><small>第24 · 1月</small></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

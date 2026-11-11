@@ -83,11 +83,12 @@ def parse_benefits(text: str) -> dict[str, str]:
 
 @dataclass(frozen=True)
 class Vocab:
-    """四份词表聚合后的封闭值域。"""
+    """六份词表聚合后的封闭值域。"""
 
     solar_terms: tuple[str, ...]
     categories: tuple[str, ...]
     dish_categories: tuple[str, ...]
+    cuisines: tuple[str, ...]
     natures: tuple[str, ...]
     flavors: tuple[str, ...]
     meridians: tuple[str, ...]
@@ -100,7 +101,7 @@ class Vocab:
 
 
 def load_vocab(vocab_dir: Path | None = None) -> Vocab:
-    """加载 data/vocab/ 下四份词表,任一文件缺失或格式损坏则抛错。"""
+    """加载 data/vocab/ 下六份词表,任一文件缺失或格式损坏则抛错。"""
     base = vocab_dir or VOCAB_DIR
     nfm = parse_nature_flavor_meridian((base / "词表-性味归经.md").read_text(encoding="utf-8"))
     return Vocab(
@@ -110,6 +111,9 @@ def load_vocab(vocab_dir: Path | None = None) -> Vocab:
             parse_categories(
                 (base / "词表-菜品分类.md").read_text(encoding="utf-8"), header="厨师"
             )
+        ),
+        cuisines=tuple(
+            parse_categories((base / "词表-菜系.md").read_text(encoding="utf-8"), header="菜系")
         ),
         natures=tuple(nfm["natures"]),
         flavors=tuple(nfm["flavors"]),

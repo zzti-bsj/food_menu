@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 我的私有食单</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（我的私有食单：user_id 非空内容，仅本人与 admin 可见）
+     行操作：查看（GET /api/dishes/{id}）、编辑（PATCH 全字段轻校验）、删除（DELETE）。
+     注：私有内容的「创建」接口待补（当前两条流水线产出为官方库内容）。 */
+  .note-bar {
+    display: flex; gap: var(--s3);
+    margin: 0 var(--s5) var(--s4);
+    padding: var(--s4);
+    border-radius: var(--r-m);
+    background: linear-gradient(150deg, #E7F3EB 0%, var(--spring-soft) 60%);
+    border: 1px solid color-mix(in srgb, var(--spring) 26%, transparent);
+  }
+  .note-bar svg { flex: none; color: var(--spring-deep); margin-top: 2px; }
+  .note-bar h2 { font-size: 14px; font-weight: 700; color: var(--spring-deep); }
+  .note-bar p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-top: 3px; }
+
+  .seg {
+    display: flex; gap: 4px;
+    margin: 0 var(--s5) var(--s3);
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .seg button {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .seg button[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(38,35,28,.12);
+  }
+
+  .mine-list { display: flex; flex-direction: column; gap: var(--s2); margin: 0 var(--s5); }
+  .mine-row {
+    padding: 13px var(--s4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--shadow-card);
+  }
+  .mine-row .top {
+    display: flex; align-items: center; gap: var(--s2);
+  }
+  .mine-row h3 { font-size: 16px; font-weight: 600; }
+  .mine-row .idno {
+    margin-left: auto;
+    font-size: 12px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .mine-row .meta-line { margin-top: 7px; }
+  .mine-row .ops {
+    display: flex; gap: var(--s2);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .op {
+    height: 34px;
+    padding: 0 14px;
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px;
+    font: inherit; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+  }
+  .op.del { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: var(--danger-soft); }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 800;
+    border-radius: 6px; padding: 3px 7px;
+  }
+  .st-pending { background: var(--winter-soft); color: var(--winter-deep); }
+  .st-pass { background: var(--spring-soft); color: var(--spring-deep); }
+  .st-reject { background: var(--danger-soft); color: var(--danger); }
+
+  .empty-note {
+    margin: var(--s4) var(--s5) 0;
+    font-size: 13px; line-height: 1.7; color: var(--ink-3);
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="mine.html" aria-label="返回我的">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <h1 style="font-family:var(--font-display);font-size:20px;font-weight:600">我的私有食单</h1>
+    </header>
+
+    <!-- 可见性说明 -->
+    <div class="note-bar">
+      <svg width="20" height="20" aria-hidden="true"><use href="#i-check"/></svg>
+      <div>
+        <h2>仅本人与管理员可见</h2>
+        <p>他人（含未登录）访问你的私有内容会得到 404，不暴露存在性。官方库内容（流水线产出）不在此列，由管理员在审核台管理。</p>
+      </div>
+    </div>
+
+    <!-- 分段 -->
+    <div class="seg" role="tablist" aria-label="内容类型">
+      <button role="tab" aria-selected="true">菜品 3</button>
+      <button role="tab" aria-selected="false">食材 2</button>
+    </div>
+
+    <!-- 私有菜品列表 -->
+    <div class="mine-list">
+      <div class="mine-row">
+        <div class="top">
+          <h3>冬酿山楂酱</h3>
+          <span class="idno">#301 · 11-08</span>
+        </div>
+        <div class="meta-line">
+          <span class="status-badge st-pending">待审核</span>
+          <span class="term-tag term-autumn">霜降</span>
+          <span class="term-tag term-autumn">立冬</span>
+        </div>
+        <div class="ops">
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>查看</button>
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-pen"/></svg>编辑</button>
+          <button class="op del" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>删除</button>
+        </div>
+      </div>
+
+      <div class="mine-row">
+        <div class="top">
+          <h3> weekend 抹茶巴斯克</h3>
+          <span class="idno">#297 · 11-05</span>
+        </div>
+        <div class="meta-line">
+          <span class="status-badge st-pass">已通过</span>
+          <span class="term-tag term-autumn">寒露</span>
+        </div>
+        <div class="ops">
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>查看</button>
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-pen"/></svg>编辑</button>
+          <button class="op del" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>删除</button>
+        </div>
+      </div>
+
+      <div class="mine-row">
+        <div class="top">
+          <h3>失败练习·惠灵顿牛排</h3>
+          <span class="idno">#289 · 10-30</span>
+        </div>
+        <div class="meta-line">
+          <span class="status-badge st-reject">已驳回</span>
+          <span class="term-tag term-autumn">霜降</span>
+        </div>
+        <div class="ops">
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>查看</button>
+          <button class="op" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-pen"/></svg>编辑</button>
+          <button class="op del" type="button"><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除确认示意 -->
+    <div class="card" style="margin:var(--s4) var(--s5) 0;padding:var(--s4);border-color:color-mix(in srgb, var(--danger) 30%, transparent);background:linear-gradient(150deg,#F9E9E5 0%,var(--danger-soft) 60%)">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <svg width="20" height="20" style="color:var(--danger);flex:none;margin-top:2px" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div>
+          <h3 style="font-size:14px;font-weight:700;color:var(--danger)">删除是不可恢复操作</h3>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink-2);margin-top:4px">点「删除」先弹确认：将永久删除该内容（DELETE /api/dishes/{id} 或 /api/ingredients/{id}），官方库内容普通用户不可删（403 需管理员）。</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="empty-note">
+      示例数据 · 编辑 = PATCH 全字段轻校验（类型 / 列宽 / category 与 solar_terms 词域；名称冲突 409，食材 image ≤500 字，空串视为清空）。
+      私有内容的「创建」接口待补：当前两条菜品流水线与食材批量流水线产出均为官方库内容。
+    </p>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

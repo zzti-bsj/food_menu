@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 设置</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（设置：通用偏好 / 关于 / 退出登录）
+     偏好仅存本机；退出清除本机令牌（access 2h / refresh 30 天）。 */
+  .group-label {
+    padding: 0 calc(var(--s5) + var(--s1));
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-3);
+    letter-spacing: 1px;
+    margin: var(--s4) 0 var(--s2);
+  }
+  .group-label:first-of-type { margin-top: var(--s2); }
+
+  .group {
+    margin: 0 var(--s5);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .g-row {
+    display: flex; align-items: center; gap: var(--s3);
+    padding: 13px var(--s4);
+    border-bottom: 1px dashed var(--line);
+    text-decoration: none;
+    color: inherit;
+  }
+  .g-row:last-child { border-bottom: none; }
+  .g-row:active { background: var(--surface-2); }
+  .g-row .grow { flex: 1; min-width: 0; }
+  .g-row h3 { font-size: 15px; font-weight: 600; }
+  .g-row .g-sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .g-row .g-val { font-size: 13px; color: var(--ink-3); flex: none; }
+  .g-row svg.e-chev { flex: none; color: var(--ink-3); }
+
+  .switch { position: relative; display: inline-block; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: var(--line-strong); border-radius: 999px;
+    transition: background var(--dur) var(--ease);
+  }
+  .switch .track::after {
+    content: "";
+    position: absolute; top: 2px; left: 2px;
+    width: 27px; height: 27px; border-radius: 999px;
+    background: #fff; box-shadow: 0 1px 3px rgba(38,35,28,.25);
+    transition: transform var(--dur) var(--ease);
+  }
+  .switch input:checked + .track { background: var(--success); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .about-row {
+    display: flex; justify-content: space-between; gap: var(--s3);
+    padding: 12px var(--s4);
+    border-bottom: 1px dashed var(--line);
+    font-size: 14px;
+  }
+  .about-row:last-child { border-bottom: none; }
+  .about-row span { color: var(--ink-2); }
+  .about-row em { font-style: normal; color: var(--ink-3); font-size: 13px; text-align: right; }
+
+  /* 退出登录（danger 区，与普通操作拉开距离） */
+  .logout-zone { margin: var(--s6) var(--s5) 0; }
+  .logout-btn {
+    width: 100%;
+    height: 48px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 15px;
+    font: inherit; font-size: 16px; font-weight: 700;
+    color: var(--danger);
+    background: var(--danger-soft);
+    border: 1.5px solid color-mix(in srgb, var(--danger) 40%, transparent);
+    cursor: pointer;
+    transition: transform 100ms var(--ease);
+  }
+  .logout-btn:active { transform: scale(.98); }
+  .logout-note {
+    margin-top: var(--s2);
+    font-size: 12px; color: var(--ink-3);
+    text-align: center; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="mine.html" aria-label="返回我的">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <h1 style="font-family:var(--font-display);font-size:20px;font-weight:600">设置</h1>
+    </header>
+
+    <p class="group-label">提醒</p>
+    <div class="group">
+      <div class="g-row">
+        <div class="grow">
+          <h3>入节提醒</h3>
+          <p class="g-sub">入节当天 07:00 · 后续支持更多定时任务</p>
+        </div>
+        <span class="switch">
+          <input type="checkbox" role="switch" aria-label="入节提醒" checked>
+          <span class="track"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 退出登录 -->
+    <div class="logout-zone">
+      <button class="logout-btn" type="button">
+        <svg width="18" height="18" aria-hidden="true"><use href="#i-logout"/></svg>
+        退出登录
+      </button>
+      <p class="logout-note">退出后清除本机令牌，私有食单仍保存在云端，重新登录即可查看。<br>（确认弹层示意见下）</p>
+    </div>
+
+    <!-- 确认弹层示意 -->
+    <div class="card" style="margin:var(--s4) var(--s5) 0;padding:var(--s4);border-color:color-mix(in srgb, var(--danger) 30%, transparent);background:linear-gradient(150deg,#F9E9E5 0%,var(--danger-soft) 60%)">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <svg width="20" height="20" style="color:var(--danger);flex:none;margin-top:2px" aria-hidden="true"><use href="#i-logout"/></svg>
+        <div style="flex:1">
+          <h3 style="font-size:14px;font-weight:700;color:var(--danger)">退出登录？</h3>
+          <p style="font-size:13px;line-height:1.7;color:var(--ink-2);margin-top:4px">退出后将返回登录页；本机草稿与偏好保留。</p>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button type="button" style="flex:1;height:38px;border-radius:10px;font:inherit;font-size:14px;font-weight:700;color:var(--ink-2);background:var(--surface);border:1px solid var(--line-strong);cursor:pointer">取消</button>
+            <a type="button" href="login.html" style="flex:1;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:inherit;font-size:14px;font-weight:700;color:#fff;background:var(--danger);border:1px solid var(--danger);cursor:pointer;text-decoration:none">退出</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 食材流水线</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（食材流水线：推荐→填充→校验→核验→入库）—— */
+  .block { margin: 0 var(--s5) var(--s3); }
+  .block-label {
+    font-size: 13px; color: var(--ink-3);
+    margin-bottom: var(--s2);
+  }
+
+  /* 五步 stepper */
+  .steps-card { padding: var(--s4); }
+  .step-row { display: flex; gap: var(--s3); position: relative; padding-bottom: 18px; }
+  .step-row::before {
+    content: "";
+    position: absolute; left: 13px; top: 28px; bottom: 0;
+    width: 1.5px; background: var(--line);
+  }
+  .step-row:last-child { padding-bottom: 0; }
+  .step-row:last-child::before { display: none; }
+  .step-row .dot {
+    flex: none;
+    width: 27px; height: 27px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    background: var(--spring-soft); color: var(--spring-deep);
+    font-size: 12px; font-weight: 700;
+    margin-top: 2px;
+  }
+  .step-row.done .dot { background: var(--spring); color: #fff; }
+  .step-row h3 { font-size: 15px; font-weight: 700; }
+  .step-row p { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+  .step-row .s-note {
+    margin-left: auto; flex: none;
+    font-size: 12px; font-weight: 700;
+    color: var(--spring-deep); background: var(--spring-soft);
+    border-radius: 6px; padding: 4px 7px;
+    align-self: center;
+  }
+
+  /* 结果分组 */
+  .res-group { margin: 0 var(--s5) var(--s3); }
+  .res-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: var(--s2);
+    font-size: 15px; font-weight: 700;
+  }
+  .res-head .count {
+    font-size: 12px; font-weight: 700;
+    border-radius: 999px; padding: 3px 9px;
+  }
+  .c-ok { background: var(--spring-soft); color: var(--spring-deep); }
+  .c-warn { background: var(--autumn-soft); color: var(--autumn-deep); }
+  .c-bad { background: var(--danger-soft); color: var(--danger); }
+
+  .name-chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
+  .name-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 12px 7px 8px;
+    font-size: 14px; font-weight: 600;
+    box-shadow: 0 1px 2px rgba(38,35,28,.05);
+  }
+  .name-chip .mini {
+    width: 24px; height: 24px; border-radius: 999px;
+    display: grid; place-items: center;
+    background: var(--surface-2);
+    border: 1px dashed var(--line-strong);
+  }
+
+  .fail-card {
+    display: flex; gap: var(--s3);
+    padding: var(--s4);
+    border-radius: var(--r-m);
+    background: linear-gradient(150deg, #F9E9E5 0%, var(--danger-soft) 60%);
+    border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent);
+  }
+  .fail-card svg { flex: none; color: var(--danger); margin-top: 2px; }
+  .fail-card h3 { font-size: 15px; font-weight: 700; color: var(--danger); }
+  .fail-card p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-top: 3px; }
+
+  .hint { margin: var(--s4) var(--s5) 0; font-size: 13px; line-height: 1.7; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8V4z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="workshop.html" aria-label="返回工坊">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <h1 style="font-family:var(--font-display);font-size:20px;font-weight:600">食材流水线</h1>
+    </header>
+
+    <!-- Step 1 · 选节气 -->
+    <div class="block">
+      <p class="block-label">为哪个节气补货？（默认当前 ±2）</p>
+      <div class="chips" style="padding:0">
+        <button class="chip" aria-pressed="false">霜降</button>
+        <button class="chip" aria-pressed="true">立冬</button>
+        <button class="chip" aria-pressed="false">小雪</button>
+        <button class="chip" aria-pressed="false">大雪</button>
+        <button class="chip" aria-pressed="false">寒露</button>
+        <button class="chip" aria-pressed="false">全部 24 节气 ⌄</button>
+      </div>
+      <button class="btn btn-primary" type="button" style="width:100%;margin-top:var(--s3)">
+        <svg width="18" height="18" aria-hidden="true"><use href="#i-play"/></svg>
+        运行流水线
+      </button>
+    </div>
+
+    <!-- 运行进度（完成态示例） -->
+    <div class="card steps-card block" style="margin-top:var(--s4)">
+      <div class="step-row done">
+        <span class="dot"><svg width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <div class="grow">
+          <h3>推荐食材</h3>
+          <p>节气词表 + 时令口径，LLM 推荐 6 个候选</p>
+        </div>
+        <span class="s-note">6 候选</span>
+      </div>
+      <div class="step-row done">
+        <span class="dot"><svg width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <div class="grow">
+          <h3>填充档案</h3>
+          <p>性味归经、功效、当令节气逐字段生成</p>
+        </div>
+        <span class="s-note">6/6</span>
+      </div>
+      <div class="step-row done">
+        <span class="dot"><svg width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <div class="grow">
+          <h3>结构校验</h3>
+          <p>字段类型 + 词表值域逐项核对</p>
+        </div>
+        <span class="s-note">5 过 · 1 打回</span>
+      </div>
+      <div class="step-row done">
+        <span class="dot"><svg width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <div class="grow">
+          <h3>事实核验</h3>
+          <p>三态判定：pass / fail / 存疑</p>
+        </div>
+        <span class="s-note">存疑 1</span>
+      </div>
+      <div class="step-row done">
+        <span class="dot"><svg width="14" height="14" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <div class="grow">
+          <h3>入库待审核</h3>
+          <p>进入审核队列，等待人工终审</p>
+        </div>
+        <span class="s-note">4 + 1 存疑</span>
+      </div>
+    </div>
+
+    <!-- 结果分组 -->
+    <section class="res-group" aria-labelledby="r-ok">
+      <div class="res-head" id="r-ok">入库待审核 <span class="count c-ok">4</span></div>
+      <div class="name-chips">
+        <span class="name-chip"><span class="mini"><svg width="13" height="13" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-leaf"/></svg></span>白萝卜</span>
+        <span class="name-chip">山药</span>
+        <span class="name-chip">莲藕</span>
+        <span class="name-chip">百合</span>
+      </div>
+    </section>
+
+    <section class="res-group" aria-labelledby="r-warn">
+      <div class="res-head" id="r-warn">存疑入库 <span class="count c-warn">1</span></div>
+      <div class="notice-card">
+        <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div>
+          <h3>苤蓝 · 已入库（附存疑备注）</h3>
+          <p>核验存疑：「清热除烦」功效依据不足，已写入备注字段，等待人工确认。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="res-group" aria-labelledby="r-bad">
+      <div class="res-head" id="r-bad">失败 <span class="count c-bad">1</span></div>
+      <div class="fail-card">
+        <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div>
+          <h3>菊芋 · 已拒绝</h3>
+          <p>结构校验打回 3 次仍未过：solar_terms 未按节气序升序写入，已记入判否日志。</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="hint">示例数据 · 节气取值来自 GET /api/terms（词表 24 节气，可任选，不限于 ±2）；运行对应 POST /api/batch（返回 recommended / inserted / doubts / failed），判否与存疑自动记入日志。</p>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

@@ -98,6 +98,17 @@
   .doubt-tag { color: var(--pending); font-size: 12px; border: 1px solid currentColor;
                border-radius: 10px; padding: 0 6px; }
   .doubt-list { margin: 2px 0 8px; padding-left: 20px; color: var(--ink); font-size: 14px; }
+  .chef-switch, .mode-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .chef-btn, .mode-btn {
+    font: inherit; font-size: 14px; padding: 4px 16px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--muted);
+  }
+  .chef-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .thumb { max-height: 130px; max-width: 100%; border-radius: 8px; display: block; margin: 4px 0 8px; }
+  .img-row { display: flex; gap: 8px; margin-top: 10px; }
+  .img-row input[type="text"] { flex: 1; min-width: 0; font-size: 13px; padding: 3px 10px; }
+  .img-row button { padding: 3px 12px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -130,13 +141,42 @@
 
   <section id="page-dishes" style="display:none">
     <section class="panel">
-      <h2>健康厨师 · 生成菜品</h2>
-      <div class="run-row">
-        <input type="text" id="dish-input" list="ingredient-names"
-               placeholder="候选食材,逗号分隔,如:白萝卜、豆腐、菠菜(库内食材有输入提示)">
-        <datalist id="ingredient-names"></datalist>
-        <button id="dish-btn">生成一道菜</button>
-        <span class="run-note" id="dish-note">一次专注一道;多食材不够搭配会被弃置并说明原因</span>
+      <h2>生成菜品</h2>
+      <div class="chef-switch">
+        <button class="chef-btn active" id="chef-health" onclick="showChef('health')">健康厨师</button>
+        <button class="chef-btn" id="chef-cuisine" onclick="showChef('cuisine')">美食大厨</button>
+      </div>
+      <div id="form-health">
+        <div class="run-row">
+          <input type="text" id="dish-input" list="ingredient-names"
+                 placeholder="候选食材,逗号分隔,如:白萝卜、豆腐、菠菜(库内食材有输入提示)">
+          <datalist id="ingredient-names"></datalist>
+          <button id="dish-btn">生成一道菜</button>
+          <span class="run-note" id="dish-note">一次专注一道;多食材不够搭配会被弃置并说明原因</span>
+        </div>
+      </div>
+      <div id="form-cuisine" style="display:none">
+        <div class="mode-tabs">
+          <button class="mode-btn active" id="mode-ingredient" onclick="showMode('ingredient')">给食材</button>
+          <button class="mode-btn" id="mode-cuisine" onclick="showMode('cuisine')">给菜系</button>
+          <button class="mode-btn" id="mode-name" onclick="showMode('name')">给菜名</button>
+        </div>
+        <div class="run-row" id="row-ingredient">
+          <input type="text" id="cuisine-ingredient-input" list="ingredient-names"
+                 placeholder="候选食材,逗号分隔,如:白萝卜、鸡胸肉(库内食材有输入提示)">
+          <button id="cuisine-ingredient-btn">生成一道菜</button>
+          <span class="run-note" id="cuisine-ingredient-note">从候选池选合理组合;不够搭配会弃置并说明原因</span>
+        </div>
+        <div class="run-row" id="row-cuisine" style="display:none">
+          <select id="cuisine-select"></select>
+          <button id="cuisine-btn">生成一道经典菜</button>
+          <span class="run-note" id="cuisine-note">从该菜系选一道代表性经典菜;已收录的会自动避开</span>
+        </div>
+        <div class="run-row" id="row-name" style="display:none">
+          <input type="text" id="name-input" placeholder="单个菜名,如:宫保鸡丁">
+          <button id="name-btn">写这道菜的正宗做法</button>
+          <span class="run-note" id="name-note">菜名须单个且不含分隔符;大厨不认识的菜会如实相告,不会硬编</span>
+        </div>
       </div>
       <div id="dish-result"></div>
     </section>
@@ -159,7 +199,7 @@ const DISH_FIELD_LABELS = [
   ["main_ingredients", "主料"], ["extras", "辅料"], ["calories", "热量"],
   ["style", "风格"], ["solar_terms", "当令节气"],
 ];
-const DISH_LONG_LABELS = [["benefits", "养生好处"], ["caution", "忌口"]];
+const DISH_LONG_LABELS = [["benefits", "养生好处"], ["story", "风味与文化"], ["caution", "忌口"]];
 const STATUSES = ["待审核", "已通过", "已驳回"];
 const PAGE_SIZE = 10;
 
@@ -192,6 +232,39 @@ function showPage(name) {
   document.getElementById("page-dishes").style.display = name === "dishes" ? "" : "none";
   document.getElementById("tab-ingredients").classList.toggle("active", name === "ingredients");
   document.getElementById("tab-dishes").classList.toggle("active", name === "dishes");
+}
+
+let currentChef = "health";
+let currentMode = "ingredient";
+
+function showChef(chef) {
+  currentChef = chef;
+  document.getElementById("form-health").style.display = chef === "health" ? "" : "none";
+  document.getElementById("form-cuisine").style.display = chef === "cuisine" ? "" : "none";
+  document.getElementById("chef-health").classList.toggle("active", chef === "health");
+  document.getElementById("chef-cuisine").classList.toggle("active", chef === "cuisine");
+}
+
+function showMode(mode) {
+  currentMode = mode;
+  for (const m of ["ingredient", "cuisine", "name"]) {
+    document.getElementById(`row-${m}`).style.display = m === mode ? "" : "none";
+    document.getElementById(`mode-${m}`).classList.toggle("active", m === mode);
+  }
+}
+
+async function loadCuisines() {
+  const cuisines = await fetchJSON("/api/cuisines");
+  document.getElementById("cuisine-select").innerHTML =
+    cuisines.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+
+function validDishName(raw) {
+  const name = raw.trim();
+  if (!name) return "请先输入菜名";
+  if (name.length > 100) return "菜名过长(>100字)";
+  if (/[,，、/|]/.test(name)) return "菜名只能是单个菜名,不能包含逗号、顿号、斜杠等分隔符";
+  return null;
 }
 
 async function loadTerms() {
@@ -247,6 +320,8 @@ function cardHTML(entity, row) {
     .join("");
   let extra = "";
   if (entity === "dish") {
+    const thumb = row.image
+      ? `<img class="thumb" src="${esc(row.image)}" alt="${esc(row.name)}">` : "";
     const longFields = DISH_LONG_LABELS
       .filter(([key]) => row[key])
       .map(([key, label]) => `<p class="block-title">${label}</p><p class="steps-block">${esc(row[key])}</p>`)
@@ -254,7 +329,10 @@ function cardHTML(entity, row) {
     const steps = `<p class="block-title">制作步骤</p><p class="steps-block">${esc(row.steps)}</p>`;
     const remark = row.remark
       ? `<p class="block-title">备注(校验存疑)</p><p class="remark-block">${esc(row.remark)}</p>` : "";
-    extra = longFields + steps + remark;
+    const imgRow = `<div class="img-row">
+      <input type="text" id="img-${row.id}" placeholder="图片 URL(留空清除)" value="${esc(row.image || "")}">
+      <button onclick="saveImage(${row.id})">存图</button></div>`;
+    extra = thumb + longFields + steps + remark + imgRow;
   }
   const catBadge = entity === "dish" ? ` <span class="badge cat">${esc(row.category)}</span>` : "";
   return `<div class="card">
@@ -340,9 +418,15 @@ function renderDishResult(result) {
     const doubts = result.doubts || [];
     const doubtBlock = doubts.length
       ? `<div class="fail-item">存疑(已写入备注):<ul>${doubts.map(d => `<li>${esc(d)}</li>`).join("")}</ul></div>` : "";
+    const storyBlock = result.story
+      ? `<div class="meta-line">风味与文化:${esc(result.story)}</div>` : "";
     host.innerHTML = `
       <div class="ok-line">✓ ${esc(result.name)} 已入库(待审核)</div>
-      ${excludedBlock}${doubtBlock}`;
+      ${storyBlock}${excludedBlock}${doubtBlock}`;
+  } else if (result.stage === "not_found") {
+    host.innerHTML = `<div class="meta-line">◌ 大厨如实相告:无法确认「${esc(result.name || "")}」——${esc(result.reason || "查无此菜")}(已记入缺口日志)</div>`;
+  } else if (result.stage === "invalid_input") {
+    host.innerHTML = `<div class="fail-item">✗ 输入不合法:${esc(result.reason || "")}</div>`;
   } else {
     const reasons = [...(result.errors || []), ...(result.problems || [])];
     const list = reasons.length
@@ -371,13 +455,69 @@ async function createDish() {
   } finally { btn.disabled = false; }
 }
 
+const CUISINE_BTN_IDS = { ingredient: "cuisine-ingredient-btn", cuisine: "cuisine-btn", name: "name-btn" };
+const CUISINE_NOTE_IDS = { ingredient: "cuisine-ingredient-note", cuisine: "cuisine-note", name: "name-note" };
+
+async function createCuisineDish() {
+  const body = { chef: "cuisine", mode: currentMode };
+  if (currentMode === "ingredient") {
+    const raw = document.getElementById("cuisine-ingredient-input").value;
+    const ingredients = raw.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+    if (!ingredients.length) { alert("请先输入至少一个候选食材"); return; }
+    body.ingredients = ingredients;
+  } else if (currentMode === "cuisine") {
+    body.cuisine = document.getElementById("cuisine-select").value;
+  } else {
+    const err = validDishName(document.getElementById("name-input").value);
+    if (err) { document.getElementById("name-note").textContent = err; return; }
+    body.name = document.getElementById("name-input").value.trim();
+  }
+  const btn = document.getElementById(CUISINE_BTN_IDS[currentMode]);
+  const note = document.getElementById(CUISINE_NOTE_IDS[currentMode]);
+  btn.disabled = true;
+  note.textContent = "美食大厨设计 + 核验把关中,约需一两分钟…";
+  try {
+    renderDishResult(await fetchJSON("/api/dishes", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body),
+    }));
+    await loadEntity("dish");
+    note.textContent = currentMode === "name"
+      ? "菜名须单个且不含分隔符;大厨不认识的菜会如实相告,不会硬编"
+      : currentMode === "cuisine"
+        ? "从该菜系选一道代表性经典菜;已收录的会自动避开"
+        : "从候选池选合理组合;不够搭配会弃置并说明原因";
+  } catch (err) {
+    note.textContent = err.message;
+  } finally { btn.disabled = false; }
+}
+
+async function saveImage(rowId) {
+  const row = STATUSES.flatMap(s => ENTITIES.dish.data[s] || []).find(r => r.id === rowId);
+  if (!row) return;
+  const value = document.getElementById(`img-${rowId}`).value.trim();
+  try {
+    await fetchJSON("/api/dish/image", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name: row.name, image: value}),
+    });
+    await loadEntity("dish");
+  } catch (err) { alert(err.message); }
+}
+
 document.getElementById("run-btn").addEventListener("click", runBatch);
 document.getElementById("dish-btn").addEventListener("click", createDish);
+document.getElementById("cuisine-ingredient-btn").addEventListener("click", createCuisineDish);
+document.getElementById("cuisine-btn").addEventListener("click", createCuisineDish);
+document.getElementById("name-btn").addEventListener("click", createCuisineDish);
 loadTerms().catch(err => alert(err.message));
 loadEntity("ingredient").catch(err => alert(err.message));
 loadEntity("dish").catch(err => alert(err.message));
 loadLastBatch().catch(err => alert(err.message));
 fillDatalist().catch(() => {});
+loadCuisines().catch(() => {});
 </script>
 </body>
 </html>

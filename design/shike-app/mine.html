@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 我的</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（我的页 v1.4.3：资料头部 + 入口列表，主流范式）
+     身份数据 GET /api/auth/me；点头像/资料区 → 编辑资料（PATCH /api/auth/me）。 */
+  .page-title-lbl {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 600; letter-spacing: 2px;
+    padding: var(--s2) var(--s5) var(--s3);
+  }
+  .gear {
+    position: absolute;
+    top: 52px; right: 16px;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: var(--r-s);
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: background var(--dur) var(--ease);
+  }
+  .gear:active { background: rgba(38,35,28,.06); }
+
+  /* 资料头部（可点 → 编辑资料） */
+  .profile {
+    display: flex; align-items: center; gap: var(--s4);
+    margin: var(--s2) var(--s5) var(--s4);
+    padding: var(--s5);
+    border-radius: var(--r-l);
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 100ms var(--ease);
+  }
+  .profile:active { transform: scale(.98); }
+  .profile::before {
+    content: "";
+    position: absolute;
+    right: -46px; top: -46px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,.95);
+  }
+  .avatar-wrap { position: relative; flex: none; }
+  .avatar {
+    width: 64px; height: 64px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    background: var(--seal);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 600;
+    box-shadow: 0 3px 10px rgba(176,58,46,.3);
+  }
+  .avatar-cam {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    display: grid; place-items: center;
+    color: var(--ink-3);
+  }
+  .profile .grow { flex: 1; min-width: 0; }
+  .profile h2 {
+    font-family: var(--font-display);
+    font-size: 20px; font-weight: 600; letter-spacing: 1px;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .role-badge {
+    font-size: 10px; font-weight: 800;
+    border-radius: 6px; padding: 3px 6px;
+    font-family: var(--font-body);
+    letter-spacing: 0;
+  }
+  .role-admin { background: var(--seal); color: #fff; }
+  .profile .pid { font-size: 13px; color: var(--ink-3); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .profile .chev { margin-left: auto; flex: none; color: var(--ink-3); }
+
+  /* 入口列表 */
+  .entry-group {
+    margin: 0 var(--s5) var(--s4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .entry-row {
+    display: flex; align-items: center; gap: var(--s3);
+    padding: 13px var(--s4);
+    border-bottom: 1px dashed var(--line);
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--dur) var(--ease);
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-row:active { background: var(--surface-2); }
+  .entry-row .e-icon {
+    width: 36px; height: 36px; flex: none;
+    display: grid; place-items: center;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    color: var(--accent-deep);
+  }
+  .entry-row .e-icon.amber { background: var(--autumn-soft); color: var(--autumn-deep); }
+  .entry-row .e-icon.rose { background: var(--summer-soft); color: var(--summer-deep); }
+  .entry-row .grow { flex: 1; min-width: 0; }
+  .entry-row h3 { font-size: 15px; font-weight: 600; }
+  .entry-row .e-sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .entry-row .e-count {
+    font-size: 12px; font-weight: 700;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-variant-numeric: tabular-nums;
+  }
+  .entry-row .e-tag {
+    font-size: 10px; font-weight: 800;
+    color: var(--summer-deep);
+    background: var(--summer-soft);
+    border-radius: 6px;
+    padding: 3px 7px;
+    flex: none;
+  }
+  .entry-row svg.e-chev { margin-left: auto; flex: none; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+  <symbol id="i-tools" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5.2L4.9 17.4A2 2 0 0 0 6.7 20h10.6a2 2 0 0 0 1.8-2.6L14 8.2V3"/><path d="M7.5 13h9"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.5"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen">
+    <h1 class="page-title-lbl">我的</h1>
+    <a class="gear" href="settings.html" aria-label="设置">
+      <svg width="22" height="22" aria-hidden="true"><use href="#i-gear"/></svg>
+    </a>
+
+    <!-- 资料头部（点按 → 编辑资料：头像/昵称） -->
+    <a class="profile panel-pop winter" href="edit-profile.html">
+      <span class="avatar-wrap">
+        <span class="avatar" aria-hidden="true">时</span>
+        <span class="avatar-cam" aria-hidden="true"><svg width="12" height="12"><use href="#i-camera"/></svg></span>
+      </span>
+      <div class="grow">
+        <h2>阿时 <span class="role-badge role-admin">管理员</span></h2>
+        <p class="pid">138****4829 · ID 7</p>
+      </div>
+      <svg class="chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+    </a>
+
+    <!-- 内容 -->
+    <div class="entry-group">
+      <a class="entry-row" href="my-content.html">
+        <span class="e-icon" aria-hidden="true"><svg width="19" height="19"><use href="#i-pen"/></svg></span>
+        <div class="grow">
+          <h3>我的私有食单</h3>
+          <p class="e-sub">仅本人与管理员可见</p>
+        </div>
+        <span class="e-count">菜品 3 · 食材 2</span>
+        <svg class="e-chev" width="18" height="18" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+    </div>
+
+    <!-- 协作与管理 -->
+    <div class="entry-group">
+      <a class="entry-row" href="review.html">
+        <span class="e-icon" aria-hidden="true"><svg width="19" height="19"><use href="#i-book"/></svg></span>
+        <div class="grow">
+          <h3>官方库审核</h3>
+          <p class="e-sub">流水线产出的人工终审</p>
+        </div>
+        <svg class="e-chev" width="18" height="18" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+      <a class="entry-row" href="admin-users.html">
+        <span class="e-icon rose" aria-hidden="true"><svg width="19" height="19"><use href="#i-shield"/></svg></span>
+        <div class="grow">
+          <h3>用户管理</h3>
+          <p class="e-sub">启停 / 角色 / 删除</p>
+        </div>
+        <span class="e-tag">admin</span>
+        <svg class="e-chev" width="18" height="18" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+    </div>
+
+    <!-- 通用 -->
+    <div class="entry-group">
+      <a class="entry-row" href="settings.html">
+        <span class="e-icon amber" aria-hidden="true"><svg width="19" height="19"><use href="#i-gear"/></svg></span>
+        <div class="grow">
+          <h3>设置</h3>
+          <p class="e-sub">入节提醒 · 退出登录</p>
+        </div>
+        <svg class="e-chev" width="18" height="18" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="主导航">
+    <a href="home.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-sun"/></svg><span>今日</span>
+    </a>
+    <a href="recipes.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-book"/></svg><span>菜谱</span>
+    </a>
+    <a href="ingredients.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-leaf"/></svg><span>食材</span>
+    </a>
+    <a href="workshop.html">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-tools"/></svg><span>工坊</span>
+    </a>
+    <a href="mine.html" aria-current="page">
+      <svg width="24" height="24" aria-hidden="true"><use href="#i-user"/></svg><span>我的</span>
+    </a>
+  </nav>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+<script>
+  // 页面标题用组标签规格（v1.4.2：页面主标题保留衬线，此处为页面名）
+</script>
+
+</body>
+</html>

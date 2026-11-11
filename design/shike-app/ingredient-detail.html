@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 白萝卜</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（食材详情页 v1.1）—— */
+
+  /* 封面头：粉彩明快面板（v1.2） */
+  .ing-hero {
+    margin: var(--s2) var(--s5) 0;
+    border-radius: var(--r-l);
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow: var(--shadow-card);
+    padding: var(--s5);
+    position: relative;
+    overflow: hidden;
+  }
+  .ing-hero::before {
+    content: "";
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,.95);
+  }
+  .ing-hero::after {
+    content: "";
+    position: absolute;
+    right: -34px; top: -34px;
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.65);
+  }
+  .ing-hero .head { display: flex; align-items: center; gap: var(--s3); position: relative; }
+  .ing-hero h1 {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 600; letter-spacing: 3px;
+    color: var(--ink);
+  }
+  .ing-hero .alias { font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+  .ing-hero .badges { display: flex; gap: 7px; flex-wrap: wrap; margin-top: var(--s4); position: relative; }
+  .i-chip {
+    font-size: 13px; font-weight: 700;
+    background: var(--surface);
+    color: var(--accent-deep);
+    border: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 8px; padding: 7px 10px;
+    box-shadow: 0 2px 6px rgba(58,124,168,.14);
+  }
+  .i-chip.ghost {
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    color: var(--ink-2);
+    border-color: var(--line-strong);
+    box-shadow: none;
+    font-weight: 600;
+  }
+
+  /* 性味归经表 */
+  .profile-card { padding: var(--s2) var(--s4); }
+  .profile-row {
+    display: flex; align-items: flex-start; gap: var(--s3);
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row .k {
+    flex: none; width: 52px;
+    font-size: 13px; font-weight: 700;
+    color: var(--accent-deep);
+    padding-top: 6px;
+  }
+  .profile-row .v { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .profile-row .v p { font-size: 15px; line-height: 1.6; color: var(--ink); }
+
+  /* 功效条目 */
+  .benefit-list { display: flex; flex-direction: column; gap: var(--s3); }
+  .benefit-item { padding: var(--s4); position: relative; }
+  .benefit-item h3 {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 15px; font-weight: 700; color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-radius: 8px; padding: 6px 10px;
+  }
+  .benefit-item p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-top: 8px; }
+
+  /* 当令节气带 */
+  .term-band {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: var(--s4);
+  }
+  .term-band .off {
+    font-size: 12px; line-height: 1;
+    padding: 6px 9px; border-radius: 6px;
+    color: var(--ink-3); border: 1px dashed var(--line-strong);
+  }
+  .term-band .on {
+    font-size: 12px; line-height: 1;
+    padding: 6px 9px; border-radius: 6px;
+    background: var(--accent); color: #fff;
+    border: 1px solid var(--accent);
+    font-weight: 700;
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .season-note { font-size: 13px; color: var(--ink-3); padding: 0 var(--s4) var(--s4); }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="ingredients.html" aria-label="返回食材">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <span style="font-size:13px;color:var(--ink-3)">食材详情</span>
+    </header>
+
+    <!-- 封面头 -->
+    <section class="ing-hero panel-pop winter" aria-labelledby="ing-name">
+      <div class="head">
+        <span style="flex:none;width:68px;height:68px;border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at 30% 25%, #FDFBF5 0%, #F0EBDC 100%);border:1.5px dashed var(--line-strong);color:var(--ink-3)" aria-hidden="true">
+          <svg width="28" height="28"><use href="#i-leaf"/></svg>
+        </span>
+        <div>
+          <h1 id="ing-name">白萝卜</h1>
+          <p class="alias">别名 · 菜菔、芦菔　|　分类 · 蔬菜</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="i-chip">性凉</span>
+        <span class="i-chip">味甘 · 味辛</span>
+        <span class="i-chip ghost">归肺经 · 胃经</span>
+      </div>
+    </section>
+
+    <!-- 性味归经 -->
+    <section class="section" aria-labelledby="sec-profile" style="margin-top:var(--s5)">
+      <div class="section-head"><h2 id="sec-profile">性味归经</h2></div>
+      <div class="page-pad">
+        <div class="card profile-card">
+          <div class="profile-row">
+            <span class="k">四气</span>
+            <div class="v"><span class="nature-badge n-liang">凉</span><p>清而不过寒，熟食更平和</p></div>
+          </div>
+          <div class="profile-row">
+            <span class="k">五味</span>
+            <div class="v">
+              <span class="flavor-chip">甘</span>
+              <span class="flavor-chip">辛</span>
+              <p>甘以和中，辛以行散</p>
+            </div>
+          </div>
+          <div class="profile-row">
+            <span class="k">归经</span>
+            <div class="v"><p>肺经 · 胃经</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="orn" aria-hidden="true"><i></i></div>
+
+    <!-- 功效 -->
+    <section class="section" aria-labelledby="sec-benefit" style="margin-top:var(--s3)">
+      <div class="section-head"><h2 id="sec-benefit">功效</h2></div>
+      <div class="page-pad benefit-list">
+        <div class="card benefit-item">
+          <h3>降气化痰</h3>
+          <p>降肺气、化痰浊，改善痰多气逆。</p>
+        </div>
+        <div class="card benefit-item">
+          <h3>消食导滞</h3>
+          <p>消化食积，改善腹胀、嗳腐吞酸。冬日进补后食之尤宜。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 当令节气 -->
+    <section class="section" aria-labelledby="sec-term">
+      <div class="section-head"><h2 id="sec-term">当令节气</h2></div>
+      <div class="page-pad">
+        <div class="card">
+          <div class="term-band">
+            <span class="off">秋分</span>
+            <span class="off">寒露</span>
+            <span class="on">霜降</span>
+            <span class="on">立冬</span>
+            <span class="on">小雪</span>
+            <span class="on">大雪</span>
+            <span class="on">冬至</span>
+            <span class="on">小寒</span>
+            <span class="off">大寒</span>
+            <span class="off">立春</span>
+          </div>
+          <p class="season-note">时令备注 · 全年均有，霜降至小寒最盛</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 食用注意 -->
+    <section class="section" aria-labelledby="sec-caution">
+      <div class="section-head"><h2 id="sec-caution">食用注意</h2></div>
+      <div class="page-pad">
+        <div class="notice-card">
+          <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div>
+            <h3>这些情况要注意</h3>
+            <p>性凉，脾胃虚寒者宜熟食；服人参、党参等补气药膳当日不宜同食（传统食忌，仅供参考）。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="orn" aria-hidden="true"><i></i></div>
+
+    <!-- 国学注脚 -->
+    <section class="section" aria-labelledby="sec-classic" style="margin-top:var(--s3)">
+      <div class="section-head"><h2 id="sec-classic">典籍注脚</h2></div>
+      <div class="page-pad">
+        <figure class="quote-card">
+          <p>「莱菔，根、叶同功……生食升气，熟食降气。」</p>
+          <cite>—— 《本草纲目》· 菜部</cite>
+        </figure>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>

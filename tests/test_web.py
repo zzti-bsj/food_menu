@@ -94,3 +94,58 @@ def test_create_dish_runs_pipeline(monkeypatch, client):
 def test_create_dish_rejects_bad_ingredients(client):
     for bad in (None, [], ["  "], "白萝卜", [1]):
         assert client.post("/api/dishes", json={"ingredients": bad}).status_code == 400
+
+
+def test_cuisines_endpoint(client):
+    cuisines = client.get("/api/cuisines").get_json()
+    assert "川菜" in cuisines and "家常菜" in cuisines and "西餐" in cuisines
+    assert len(cuisines) == 18
+
+
+def test_create_dish_chef_cuisine_dispatch(monkeypatch, client):
+    calls = []
+
+    class FakeCuisinePipeline:
+        def run(self, mode, payload):
+            calls.append((mode, payload))
+            return {"stage": "inserted", "name": "宫保鸡丁", "dish": {}, "excluded": []}
+
+    monkeypatch.setattr(web_app, "CuisinePipeline", FakeCuisinePipeline)
+    res = client.post("/api/dishes", json={"chef": "cuisine", "mode": "name", "name": "宫保鸡丁"})
+    assert res.status_code == 200
+    assert res.get_json()["stage"] == "inserted"
+    assert calls == [("name", {"chef": "cuisine", "mode": "name", "name": "宫保鸡丁"})]
+
+
+def test_create_dish_health_path_unchanged(monkeypatch, client):
+    class FakeDishPipeline:
+        def __init__(self):
+            pass
+
+        def run(self, ingredients):
+            return {"stage": "inserted", "name": "汤", "dish": {}, "excluded": []}
+
+    monkeypatch.setattr(web_app, "DishPipeline", FakeDishPipeline)
+    res = client.post("/api/dishes", json={"ingredients": ["白萝卜"]})
+    assert res.get_json()["stage"] == "inserted"
+
+
+def test_set_dish_image(monkeypatch, client):
+    calls = []
+    monkeypatch.setattr(
+        repository, "update_dish_image", lambda n, i: calls.append((n, i)) or True
+    )
+    ok = client.post("/api/dish/image", json={"name": "宫保鸡丁", "image": "https://x/1.jpg"})
+    assert ok.status_code == 200
+    assert calls[-1] == ("宫保鸡丁", "https://x/1.jpg")
+    clear = client.post("/api/dish/image", json={"name": "宫保鸡丁", "image": ""})
+    assert clear.status_code == 200
+    assert calls[-1] == ("宫保鸡丁", None)
+
+
+def test_set_dish_image_rejects_bad_params(monkeypatch, client):
+    monkeypatch.setattr(repository, "update_dish_image", lambda n, i: False)
+    assert client.post("/api/dish/image", json={"image": "x"}).status_code == 400
+    assert client.post("/api/dish/image", json={"name": "宫保鸡丁", "image": 1}).status_code == 400
+    miss = client.post("/api/dish/image", json={"name": "不存在", "image": "x"})
+    assert miss.status_code == 404

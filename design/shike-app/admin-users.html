@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>食刻 · 用户管理</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* —— 页面级样式（用户管理 · admin 专属）
+     GET /api/users、PATCH /api/users/{id}（nickname/status/role）、DELETE /api/users/{id}
+     规则：不能禁用自己或将角色降级为 user；不能删除自己；名下有内容删除 409。 */
+  .rule-bar {
+    display: flex; gap: var(--s3);
+    margin: 0 var(--s5) var(--s4);
+    padding: var(--s4);
+    border-radius: var(--r-m);
+    background: linear-gradient(150deg, #F9E9E5 0%, var(--danger-soft) 60%);
+    border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent);
+  }
+  .rule-bar svg { flex: none; color: var(--danger); margin-top: 2px; }
+  .rule-bar h2 { font-size: 14px; font-weight: 700; color: var(--danger); }
+  .rule-bar p { font-size: 13px; line-height: 1.7; color: var(--ink-2); margin-top: 3px; }
+
+  .user-list { display: flex; flex-direction: column; gap: var(--s3); margin: 0 var(--s5); }
+  .user-card { padding: var(--s4); }
+  .user-card.me { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .u-top { display: flex; align-items: center; gap: var(--s3); }
+  .u-avatar {
+    flex: none;
+    width: 40px; height: 40px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .u-top .grow { flex: 1; min-width: 0; }
+  .u-top h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .u-role {
+    font-size: 10px; font-weight: 800;
+    border-radius: 6px; padding: 3px 6px;
+  }
+  .ur-admin { background: var(--seal); color: #fff; }
+  .ur-user { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .u-me { background: var(--accent-soft); color: var(--accent-deep); }
+  .u-top .u-phone { font-size: 13px; color: var(--ink-3); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .u-status {
+    flex: none;
+    font-size: 11px; font-weight: 800;
+    border-radius: 999px; padding: 4px 9px;
+  }
+  .us-ok { background: var(--spring-soft); color: var(--spring-deep); }
+  .us-off { background: var(--danger-soft); color: var(--danger); }
+
+  .u-ops { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s3); padding-top: var(--s3); border-top: 1px dashed var(--line); }
+  .op {
+    height: 32px;
+    padding: 0 12px;
+    display: inline-flex; align-items: center;
+    border-radius: 999px;
+    font: inherit; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+  }
+  .op.warn { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 45%, transparent); background: var(--warning-soft); }
+  .op.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: var(--danger-soft); }
+  .op:disabled { opacity: .4; cursor: not-allowed; }
+
+  .hint { margin: var(--s4) var(--s5) 0; font-size: 13px; line-height: 1.7; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+</svg>
+
+<div class="phone">
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 11h2V8H1v3zm4 0h2V6H5v5zm4 0h2V4H9v7zm4 0h2V1h-2v10z" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0"/><path d="M4 7a6 6 0 0 1 8 0"/><path d="M6.5 9.5a3 3 0 0 1 3 0"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="screen no-tabbar">
+    <header class="nav-header">
+      <a class="icon-btn" href="mine.html" aria-label="返回我的">
+        <svg width="22" height="22" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+      </a>
+      <h1 style="font-family:var(--font-display);font-size:20px;font-weight:600">用户管理 <span style="font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--summer-deep);background:var(--summer-soft);border-radius:6px;padding:3px 7px;vertical-align:2px">admin</span></h1>
+    </header>
+
+    <!-- 操作规则 -->
+    <div class="rule-bar">
+      <svg width="20" height="20" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div>
+        <h2>三条硬规则（接口强校验）</h2>
+        <p>不能禁用自己或将角色降级为 user；不能删除自己；名下仍有食材或菜品的用户不可删除（409，请先转移清理或改用禁用）。</p>
+      </div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="user-list">
+      <!-- 我自己 -->
+      <div class="card user-card me">
+        <div class="u-top">
+          <span class="u-avatar" aria-hidden="true">时</span>
+          <div class="grow">
+            <h3>阿时 <span class="u-role ur-admin">admin</span> <span class="u-role u-me">我</span></h3>
+            <p class="u-phone">138****4829 · 私有内容 5 项</p>
+          </div>
+          <span class="u-status us-ok">正常</span>
+        </div>
+        <div class="u-ops">
+          <button class="op" type="button" disabled>不能禁用自己</button>
+          <button class="op" type="button" disabled>不能降级自己</button>
+          <button class="op" type="button" disabled>不能删除自己</button>
+        </div>
+      </div>
+
+      <!-- 普通用户 -->
+      <div class="card user-card">
+        <div class="u-top">
+          <span class="u-avatar" aria-hidden="true">禾</span>
+          <div class="grow">
+            <h3>禾禾 <span class="u-role ur-user">user</span></h3>
+            <p class="u-phone">159****2036 · 私有内容 0 项</p>
+          </div>
+          <span class="u-status us-ok">正常</span>
+        </div>
+        <div class="u-ops">
+          <button class="op warn" type="button">禁用</button>
+          <button class="op" type="button">设为 admin</button>
+          <button class="op danger" type="button">删除</button>
+        </div>
+      </div>
+
+      <!-- 已禁用用户 -->
+      <div class="card user-card">
+        <div class="u-top">
+          <span class="u-avatar" aria-hidden="true">麦</span>
+          <div class="grow">
+            <h3 style="color:var(--ink-2)">麦芽糖 <span class="u-role ur-user">user</span></h3>
+            <p class="u-phone">186****7702 · 私有内容 12 项</p>
+          </div>
+          <span class="u-status us-off">禁用</span>
+        </div>
+        <div class="u-ops">
+          <button class="op" type="button">恢复正常</button>
+          <button class="op danger" type="button" disabled title="名下有内容">删除 · 名下有内容</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">
+      示例数据 · 列表 GET /api/users；修改 PATCH /api/users/{id}（nickname 1–50 字 / status 正常·禁用 / role user·admin，均返回最新 user）；
+      删除 DELETE /api/users/{id}。非 admin 访问返回 403「需要管理员权限」。
+    </p>
+  </div>
+
+  <div class="home-indicator" aria-hidden="true"></div>
+</div>
+
+</body>
+</html>
