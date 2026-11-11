@@ -19,6 +19,17 @@ app = Flask(__name__, static_folder=None)
 _last_batch = None
 
 
+@app.after_request
+def add_cors(response):
+    """dev 联调:允许移动端 Web 预览(expo start --web)跨域拉取 API;带 Origin 才回加。"""
+    origin = request.headers.get("Origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE"
+    return response
+
+
 @app.get("/")
 def index():
     return send_from_directory(Path(__file__).parent, "review.html")
@@ -440,4 +451,4 @@ def auth_update_me():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8787, threaded=True)
+    app.run(host="0.0.0.0", port=8787, threaded=True)
