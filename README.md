@@ -37,15 +37,57 @@ for f in db/upgrade/*.sql; do mysql -u <user> -p shike < "$f"; done   # Duplicat
 # 2. 配置(SHIKE_ENV=prod 时读取 .env.prod)
 cp .env.dev.example .env.prod       # 填 DB / JWT 密钥(openssl rand -hex 32)/ 智谱 Key
 
-# 3. 启动(systemd 常驻,单元文件样例见 docs/DEPLOY-v1.md)
-SHIKE_ENV=prod .venv/bin/gunicorn -w 2 -b 0.0.0.0:8787 'web.app:app'
+# 3. systemd 常驻:写单元文件(/etc/systemd/system/shike.service)
+sudo tee /etc/systemd/system/shike.service >/dev/null <<'EOF'
+[Unit]
+Description=Shike API (Flask/gunicorn)
+After=network.target mysql.service
 
-# 4. 验证 + 防火墙
+[Service]
+User=<部署用户>
+WorkingDirectory=/srv/shike
+Environment=SHIKE_ENV=prod
+ExecStart=/srv/shike/.venv/bin/gunicorn -w 2 -b 0.0.0.0:8787 'web.app:app'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 4. 启动与日常操作
+sudo systemctl daemon-reload        # 新建/改动 unit 文件后必须执行
+sudo systemctl enable --now shike   # 开机自启 + 立即启动
+sudo systemctl restart shike        # 升级 / 改 .env.prod 后重启
+sudo systemctl status shike         # 查看是否 active (running)
+
+# 5. 验证 + 防火墙
 curl http://127.0.0.1:8787/api/terms      # 24 节气 JSON
 # 安全组/ufw 只放行 TCP 8787;3306 不对公网
 ```
 
 图片落盘 `web/uploads/`,备份 DB 时连目录一起备(库内只存相对路径)。
+
+### 服务端日志与排查
+
+日志由 systemd 收进 journald(不落文件):
+
+```bash
+sudo journalctl -u shike -n 100 --no-pager   # 最近 100 行
+sudo journalctl -u shike -f                  # 实时跟踪(类似 tail -f)
+sudo journalctl -u shike --since today       # 今天以来的
+```
+
+`curl -s` 会把连接错误一并吞掉,接口"没返回"时先去掉 `-s` 看真实报错:
+
+```bash
+curl -v http://<IP>:8787/api/terms
+```
+
+- **Connection refused**:服务器上没有进程监听 8787,即服务没起来或启动失败。先 `systemctl status shike`;若 unit 不存在,按上面第 3 步安装;若 failed,用 journalctl 看根因(常见见下两条)
+- **journalctl 出现 `status=217/USER`**:unit 文件里 `User=` 的账号在服务器上不存在(典型:照抄了 `<部署用户>` 占位符)。改成实际存在的用户(root 直装就填 root),然后 `daemon-reload` + `restart`
+- **启动失败但 journalctl 显示 Python 报错**:`.env.prod` 漏配 / DB 账号密码错 / gunicorn 没装进 venv,按报错行处理
+- **长时间无响应(超时)**:云安全组 / ufw 没放行 TCP 8787
+- **服务器本机 `curl 127.0.0.1:8787` 通、外网不通**:同样是安全组问题
 
 ### 移动端 APK
 

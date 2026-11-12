@@ -81,10 +81,11 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-```bash
-sudo systemctl enable --now shike
+> `User=` 必须填服务器上**实际存在**的账号(在 `/srv/shike` 有读写权;root 直装就填 `root`)。填了不存在的用户,启动会报 `status=217/USER`。
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/api/terms   # 期望 200
 ```
+
+**日志**(systemd 收进 journald,不落文件):`sudo journalctl -u shike -n 100 --no-pager` 最近 100 行;`-f` 实时跟踪;`--since today` 今日以来。改动 unit 文件后需 `sudo systemctl daemon-reload` 再 restart。
 
 **上传目录**:`web/uploads/` 为图片落盘目录(首次上传自动创建)。备份/迁移必须连同该目录一起,数据库里只存相对路径。
 
