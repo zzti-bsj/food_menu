@@ -9,7 +9,7 @@
 sudo apt update && sudo apt install -y python3 python3-venv python3-pip mysql-server
 ```
 
-- Python ≥ 3.11;MySQL 8.0.13+(归属唯一索引用到功能索引)。
+- Python ≥ 3.10(代码使用 3.10 的 PEP 604 类型语法,3.10/3.11/3.12 均可);MySQL 8.0.13+(归属唯一索引用到功能索引)。
 - 开放防火墙/安全组 **TCP 8787**(仅此一个对外端口;3306 不要对公网开放)。
 
 ## 2. 数据库初始化
@@ -43,7 +43,7 @@ SOURCE db/upgrade/2026-11-12-user-avatar.sql;          -- 用户头像列
 
 ```bash
 sudo mkdir -p /srv/shike && sudo chown $USER /srv/shike
-git clone <你的仓库地址> /srv/shike && cd /srv/shike
+git clone https://github.com/zzti-bsj/food_menu.git /srv/shike && cd /srv/shike
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt gunicorn
 ```
