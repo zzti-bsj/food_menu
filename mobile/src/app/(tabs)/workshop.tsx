@@ -40,7 +40,7 @@ export default function WorkshopScreen() {
     >
       {/* 页题:朱砂印章「坊」+ 衬线大字(设计稿 .page-title) */}
       <View style={statics.titleRow}>
-        <Seal char="坊" />
+        <Seal char="坊" small />
         <Text style={statics.pageTitle}>工坊</Text>
       </View>
 
@@ -184,14 +184,14 @@ const statics = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.s3,
     paddingHorizontal: pagePad,
-    marginBottom: spacing.s4,
+    marginBottom: spacing.s5,
   },
   pageTitle: {
     fontFamily: fontDisplay,
-    fontSize: 28,
-    lineHeight: 38,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '600',
-    letterSpacing: 2,
+    letterSpacing: 1,
     color: colors.ink,
   },
   pipeWrap: {

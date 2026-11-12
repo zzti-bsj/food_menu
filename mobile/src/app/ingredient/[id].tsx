@@ -12,7 +12,7 @@ import { getIngredient } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { currentTerm, nearbyTerms, seasonOfTerm } from '@/domain/solar-terms';
 import { splitList } from '@/utils/text';
-import { colors, functional, seasons } from '@/theme/tokens';
+import { colors, flavorTints, functional, seasons } from '@/theme/tokens';
 import { pagePad, radius, spacing, type } from '@/theme/theme';
 
 const VIEWPORT = 350;
@@ -92,7 +92,7 @@ export default function IngredientDetailScreen() {
         </View>
         <View style={statics.infoRow}>
           <Text style={statics.infoKey}>五味</Text>
-          <NeutralChips items={flavors} />
+          <FlavorChips items={flavors} />
         </View>
         <View style={statics.infoRow}>
           <Text style={statics.infoKey}>归经</Text>
@@ -159,7 +159,26 @@ export default function IngredientDetailScreen() {
   );
 }
 
-/** 中性描边 chip 组(§2.5 语言,五味/分类/归经共用;层级让位于四气徽章与节气标签) */
+/** 五味 chips:五脏五色淡底(有映射),淡/涩保持中性描边 */
+function FlavorChips({ items }: { items: string[] }) {
+  return (
+    <View style={statics.neutralChips}>
+      {items.map((f) => {
+        const tint = flavorTints[f];
+        return (
+          <View
+            key={f}
+            style={[statics.neutralChip, tint && { backgroundColor: tint.bg, borderColor: tint.bg }]}
+          >
+            <Text style={[statics.neutralChipText, tint && { color: tint.fg }]}>{f}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** 中性描边 chip 组(§2.5 语言,分类/归经共用;层级让位于四气徽章与节气标签) */
 function NeutralChips({ items }: { items: string[] }) {
   return (
     <View style={statics.neutralChips}>

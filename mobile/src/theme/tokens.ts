@@ -78,4 +78,15 @@ export const natureBadges: Record<string, { bg: string; fg: string }> = {
   热: { bg: '#F8E6E0', fg: '#93301F' },
 };
 
+/** 五味淡底(§2.5 扩展,用户选定方案):五脏五色传统映射——酸=肝青/苦=心赤/甘=脾黄/
+ *  辛=肺白(暖灰白)/咸=肾黑(墨灰);仅淡底不彩边,文字墨系深档(对比 ≥5:1);
+ *  淡/涩 无映射,保持中性描边。 */
+export const flavorTints: Record<string, { bg: string; fg: string }> = {
+  酸: { bg: '#E8F1E4', fg: '#3D6B35' },
+  苦: { bg: '#F7E9E6', fg: '#8C3B32' },
+  甘: { bg: '#F8F1DF', fg: '#7E5D12' },
+  辛: { bg: '#F3F0EA', fg: '#5B564A' },
+  咸: { bg: '#ECEBE8', fg: '#4E4A40' },
+};
+
 /** 五味不做彩色:中性描边 chip(--line-strong 描边 + --ink-2),见 ui 组件阶段实现 */

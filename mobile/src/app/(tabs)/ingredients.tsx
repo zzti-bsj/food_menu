@@ -52,7 +52,7 @@ export default function IngredientsScreen() {
   return (
     <View style={[statics.flex, { paddingTop: insets.top }]}>
       <View style={statics.titleRow}>
-        <Seal char="材" />
+        <Seal char="材" small />
         <Text style={statics.pageTitle}>食材百科</Text>
       </View>
       {/* 摘要行:两个维度 chip 即弹窗入口(独立成行,避免与标题挤压溢出) */}
@@ -180,14 +180,14 @@ const statics = StyleSheet.create({
     gap: spacing.s3,
     paddingHorizontal: pagePad,
     marginTop: spacing.s3,
-    marginBottom: spacing.s2,
+    marginBottom: spacing.s5,
   },
   pageTitle: {
     fontFamily: fontDisplay,
-    fontSize: 28,
-    lineHeight: 38,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '600',
-    letterSpacing: 2,
+    letterSpacing: 1,
     color: colors.ink,
   },
   filterBar: {

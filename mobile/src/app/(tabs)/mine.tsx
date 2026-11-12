@@ -217,14 +217,14 @@ const statics = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: pagePad,
-    marginBottom: spacing.s4,
+    marginBottom: spacing.s5,
   },
   pageTitle: {
     fontFamily: fontDisplay,
-    fontSize: 28,
-    lineHeight: 38,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '600',
-    letterSpacing: 2,
+    letterSpacing: 1,
     color: colors.ink,
   },
   gear: {

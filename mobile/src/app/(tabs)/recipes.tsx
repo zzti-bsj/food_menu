@@ -81,13 +81,9 @@ export default function RecipesScreen() {
   return (
     <View style={[statics.flex, { paddingTop: insets.top }]}>
       <View style={statics.titleRow}>
-        <Seal char="菜" />
+        <Seal char="菜" small />
         <Text style={statics.pageTitle}>菜谱库</Text>
       </View>
-      <Text style={[type.caption, statics.subtitle, { color: colors.ink3 }]}>
-        默认展示全部,可按节气与做法筛选
-      </Text>
-
       {/* 摘要行:两个维度 chip 即弹层入口(无第三按钮) */}
       <View style={statics.filterBar}>
         <FilterChip
@@ -172,19 +168,15 @@ const statics = StyleSheet.create({
     gap: spacing.s3,
     paddingHorizontal: pagePad,
     marginTop: spacing.s3,
+    marginBottom: spacing.s5,
   },
   pageTitle: {
     fontFamily: fontDisplay,
-    fontSize: 28,
-    lineHeight: 38,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '600',
-    letterSpacing: 2,
+    letterSpacing: 1,
     color: colors.ink,
-  },
-  subtitle: {
-    paddingHorizontal: pagePad,
-    marginTop: 2,
-    marginBottom: spacing.s3,
   },
   filterBar: {
     flexDirection: 'row',
