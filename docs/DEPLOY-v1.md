@@ -94,12 +94,12 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/api/terms   # 期�
 
 ```bash
 cd mobile
-EXPO_PUBLIC_API_BASE_URL=http://212.64.28.204:8787 npx expo prebuild -p android
+EXPO_PUBLIC_API_BASE_URL=http://<服务器IP>:8787 npx expo prebuild -p android
 cd android && ./gradlew assembleRelease
 # 产物:android/app/build/outputs/apk/release/app-release.apk
 ```
 
-v1 产物 `shike-v1.apk` 即以此方式打包(服务端 212.64.28.204:8787,见 tag `v1`);服务器 IP 变更时改此地址重新构建。安装:传输到手机 → 允许"未知来源" → 安装。
+v1 产物 `shike-v1.apk` 即以此方式打包(见 tag `v1`);服务器 IP 变更时改此地址重新构建。安装:传输到手机 → 允许"未知来源" → 安装。
 
 **换服务器 IP = 重新构建 APK**(地址是构建期常量);文档第 5 节为完整构建环境要求。
 
