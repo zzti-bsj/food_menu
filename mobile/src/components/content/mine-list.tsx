@@ -1,16 +1,14 @@
-/** 私有食单列表屏(我的菜谱 / 收录食材两个入口已拆分,单页单类,不再双 Tab):
- *  可见性说明条(春绿渐变卡)+ 名称搜索 + 行卡列表。
- *  行卡 = 封面图/食签牌 + 名称/状态徽章 + #id·日期 + 元数据行(厨师/四气徽章·做法·热量·节气 Tag)+
- *  虚线分隔操作行(查看/编辑/删除胶囊)。空态 = 占位图 + 引导按钮。聚焦即重拉。
- *  路由薄壳:app/my-dishes.tsx 与 app/my-ingredients.tsx。 */
+/** 私有食单列表屏(我的菜谱 / 收录食材,单页单类):
+ *  名称搜索 + 行卡列表(无左侧签牌,文字优先,对照 my-content.html)。
+ *  行卡 = 名称/状态徽章 + #id·日期 + 元数据行(厨师/四气徽章·做法·热量·节气 Tag);
+ *  整块点按进详情,右侧竖排两枚弱化图标按钮(编辑/删除,常态 ink3,按压才现色)。
+ *  空态 = 占位图 + 引导按钮。聚焦即重拉。路由薄壳:app/my-dishes.tsx / app/my-ingredients.tsx。 */
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChefBadge, DefaultImage, MonoTag, NatureBadge } from '@/components/brand';
-import { CheckIcon, EyeIcon, PenIcon, SearchIcon, TrashIcon } from '@/components/icons';
-import { FoodImage } from '@/components/content/food-image';
+import { DefaultImage, NatureBadge, ChefBadge } from '@/components/brand';
+import { PenIcon, SearchIcon, TrashIcon } from '@/components/icons';
 import { deleteDish, deleteIngredient, listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/auth/auth-context';
@@ -19,7 +17,7 @@ import { parseStyle, splitList } from '@/utils/text';
 import { seasonOfTerm } from '@/domain/solar-terms';
 import type { ContentStatus, Dish, Ingredient } from '@/api/types';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { inputText, pagePad, radius, shadows, spacing, tabularNums, type } from '@/theme/theme';
+import { cursorProps, pagePad, radius, shadows, spacing, type } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 
@@ -57,28 +55,6 @@ const COPY: Record<MineKind, { title: string; placeholder: string; empty: { kind
   },
 };
 
-const RFC_MONTHS: Record<string, number> = {
-  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
-};
-
-/** created_at →「MM-DD」。Flask jsonify 序列化为 RFC 822(如「Sat, 08 Nov 2026 … GMT」),
- *  Hermes 的 Date.parse 仅认 ISO,故手写回退解析;两种都失败返回 null(仅展示 #id)。 */
-function shortDate(value: string | undefined): string | null {
-  if (!value) return null;
-  const pad = (n: number) => `${n}`.padStart(2, '0');
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return `${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
-  }
-  const m = /(\d{1,2}) ([A-Z][a-z]{2}) (\d{4})/.exec(value);
-  if (m) {
-    const month = RFC_MONTHS[m[2]];
-    if (month !== undefined) return `${pad(month + 1)}-${pad(Number(m[1]))}`;
-  }
-  return null;
-}
-
 export function MineContentScreen({ kind }: { kind: MineKind }) {
   const copy = COPY[kind];
   const { user } = useAuth();
@@ -95,14 +71,10 @@ export function MineContentScreen({ kind }: { kind: MineKind }) {
     const [dishGroups, ingredientGroups] = await Promise.all([listDishGroups(), listIngredientGroups()]);
     const scoped = <T extends { user_id: number | null }>(rows: T[]) =>
       rows.filter((r) => r.user_id === user?.id);
-    // 待审核不进私有列表:在审核待办里,通过后才展示
+    // 私有食单只放「已通过」;待审核与已驳回都在工坊审核台(驳回可查看/删除,释放名称供重新生成)
     return {
-      dishes: scoped([...dishGroups.已通过, ...dishGroups.已驳回]).filter(
-        (d) => !removed.dishes.has(d.id),
-      ),
-      ingredients: scoped([...ingredientGroups.已通过, ...ingredientGroups.已驳回]).filter(
-        (i) => !removed.ingredients.has(i.id),
-      ),
+      dishes: scoped(dishGroups.已通过).filter((d) => !removed.dishes.has(d.id)),
+      ingredients: scoped(ingredientGroups.已通过).filter((i) => !removed.ingredients.has(i.id)),
     };
   }, [user?.id, removed]);
 
@@ -163,28 +135,10 @@ export function MineContentScreen({ kind }: { kind: MineKind }) {
         <View style={statics.back} />
       </View>
 
-      {/* 可见性说明条(设计 .note-bar):春绿渐变卡,对勾 + 标题 + 释义 */}
-      <LinearGradient
-        colors={seasons.spring.panel}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={statics.noteBar}
-      >
-        <View style={statics.noteIcon} aria-hidden>
-          <CheckIcon size={18} color={seasons.spring.deep} />
-        </View>
-        <View style={statics.noteBody}>
-          <Text style={statics.noteTitle}>仅本人与管理员可见</Text>
-          <Text style={statics.noteText}>
-            他人(含未登录)访问你的私有内容会得到 404,不暴露存在性。官方库内容不在此列,由管理员在审核台管理。
-          </Text>
-        </View>
-      </LinearGradient>
-
       {/* 搜索框(§7:高 44 · radius 14) */}
       <View style={statics.searchBox}>
         <SearchIcon size={18} color={colors.ink3} />
-        <TextInput
+        <TextInput {...cursorProps}
           style={statics.searchInput}
           value={query}
           onChangeText={setQuery}
@@ -239,44 +193,20 @@ export function MineContentScreen({ kind }: { kind: MineKind }) {
   );
 }
 
-/** 行卡头部公共段:封面图(有图)/食签牌(无图)+ 名称/状态徽章 + #id·日期 */
-function RowHead({
-  id,
-  name,
-  status,
-  image,
-  createdAt,
-  termSeason,
-  placeholderKind,
-}: {
-  id: number;
-  name: string;
-  status: ContentStatus;
-  image: string | null;
-  createdAt?: string;
-  termSeason: ReturnType<typeof seasonOfTerm>;
-  placeholderKind: 'leaf' | 'bowl';
-}) {
+/** 行卡标题行:名称 + 状态徽章(仅异常状态显示) */
+function RowHead({ name, status }: { name: string; status: ContentStatus }) {
   const tone = STATUS_TONE[status];
-  const date = shortDate(createdAt);
   return (
-    <View style={statics.rowTop}>
-      {image ? (
-        <FoodImage uri={image} kind={placeholderKind} width={44} height={44} />
-      ) : (
-        <MonoTag char={name.slice(0, 1)} tone={termSeason} size="md" />
-      )}
-      <View style={statics.rowGrow}>
-        <View style={statics.titleLine}>
-          <Text style={statics.rowTitle} numberOfLines={1}>
-            {name}
-          </Text>
-          <View style={[statics.statusBadge, { backgroundColor: tone.bg }]}>
-            <Text style={[statics.statusText, { color: tone.fg }]}>{status}</Text>
-          </View>
+    <View style={statics.titleLine}>
+      <Text style={statics.rowTitle} numberOfLines={1}>
+        {name}
+      </Text>
+      {/* 「已通过」是默认态不标注;仅异常状态(已驳回/待审核)出徽章 */}
+      {status !== '已通过' && (
+        <View style={[statics.statusBadge, { backgroundColor: tone.bg }]}>
+          <Text style={[statics.statusText, { color: tone.fg }]}>{status}</Text>
         </View>
-      </View>
-      <Text style={statics.idno}>{date ? `#${id} · ${date}` : `#${id}`}</Text>
+      )}
     </View>
   );
 }
@@ -304,60 +234,27 @@ function TermTags({ terms }: { terms: string[] }) {
   );
 }
 
-/** 操作行(设计 .ops):虚线上分隔 + 查看/编辑/删除胶囊 */
-function RowOps({
-  name,
-  onView,
-  onEdit,
-  onRemove,
-}: {
-  name: string;
-  onView: () => void;
-  onEdit: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <View style={statics.ops}>
-      <OpButton label="查看" onPress={onView} accessibilityLabel={`查看 ${name}`}>
-        <EyeIcon size={14} color={colors.ink2} />
-      </OpButton>
-      <OpButton label="编辑" onPress={onEdit} accessibilityLabel={`编辑 ${name}`}>
-        <PenIcon size={14} color={colors.ink2} />
-      </OpButton>
-      <OpButton label="删除" danger onPress={onRemove} accessibilityLabel={`删除 ${name}`}>
-        <TrashIcon size={14} color={functional.danger} />
-      </OpButton>
-    </View>
-  );
-}
-
-function OpButton({
-  label,
-  danger = false,
-  children,
+/** 行尾弱化图标按钮:28×28 视觉 + hitSlop 补足热区;常态 ink3 灰线无边框,按压才浮现淡底 */
+function GhostIcon({
   onPress,
   accessibilityLabel,
+  pressedStyle,
+  children,
 }: {
-  label: string;
-  danger?: boolean;
-  children: ReactNode;
   onPress: () => void;
   accessibilityLabel: string;
+  pressedStyle?: { backgroundColor: string };
+  children: ReactNode;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      hitSlop={4}
-      style={({ pressed }) => [
-        statics.op,
-        danger && statics.opDel,
-        pressed && { opacity: 0.8 },
-      ]}
+      hitSlop={8}
+      style={({ pressed }) => [statics.ghostBtn, pressed && statics.ghostBtnPressed, pressed && pressedStyle]}
     >
       {children}
-      <Text style={[statics.opText, danger && statics.opTextDel]}>{label}</Text>
     </Pressable>
   );
 }
@@ -375,7 +272,6 @@ function DishRow({
   onRemove: () => void;
 }) {
   const terms = splitList(dish.solar_terms);
-  const dishSeason = seasonOfTerm(terms[0] ?? '');
   const { method } = parseStyle(dish.style);
   return (
     <View style={[statics.row, shadows.card.android]}>
@@ -385,15 +281,7 @@ function DishRow({
         onPress={onView}
         style={statics.rowMain}
       >
-        <RowHead
-          id={dish.id}
-          name={dish.name}
-          status={dish.status}
-          image={dish.image}
-          createdAt={dish.created_at}
-          termSeason={dishSeason}
-          placeholderKind="bowl"
-        />
+        <RowHead name={dish.name} status={dish.status} />
         <View style={statics.metaLine}>
           <ChefBadge category={dish.category} />
           <Text style={statics.metaText} numberOfLines={1}>
@@ -403,7 +291,19 @@ function DishRow({
           <TermTags terms={terms} />
         </View>
       </Pressable>
-      <RowOps name={dish.name} onView={onView} onEdit={onEdit} onRemove={onRemove} />
+      {/* 与标题同行的右上角操作位 */}
+      <View style={statics.trail}>
+        <GhostIcon onPress={onEdit} accessibilityLabel={`编辑 ${dish.name}`}>
+          <PenIcon size={15} color={colors.ink3} />
+        </GhostIcon>
+        <GhostIcon
+          onPress={onRemove}
+          accessibilityLabel={`删除 ${dish.name}`}
+          pressedStyle={{ backgroundColor: functional.dangerSoft }}
+        >
+          <TrashIcon size={15} color={colors.ink3} />
+        </GhostIcon>
+      </View>
     </View>
   );
 }
@@ -421,7 +321,6 @@ function IngredientRow({
   onRemove: () => void;
 }) {
   const terms = splitList(item.solar_terms);
-  const itemSeason = seasonOfTerm(terms[0] ?? '');
   return (
     <View style={[statics.row, shadows.card.android]}>
       <Pressable
@@ -430,15 +329,7 @@ function IngredientRow({
         onPress={onView}
         style={statics.rowMain}
       >
-        <RowHead
-          id={item.id}
-          name={item.name}
-          status={item.status}
-          image={item.image}
-          createdAt={item.created_at}
-          termSeason={itemSeason}
-          placeholderKind="leaf"
-        />
+        <RowHead name={item.name} status={item.status} />
         <View style={statics.metaLine}>
           <NatureBadge nature={item.nature} />
           <Text style={statics.metaText} numberOfLines={1}>
@@ -448,7 +339,18 @@ function IngredientRow({
           <TermTags terms={terms} />
         </View>
       </Pressable>
-      <RowOps name={item.name} onView={onView} onEdit={onEdit} onRemove={onRemove} />
+      <View style={statics.trail}>
+        <GhostIcon onPress={onEdit} accessibilityLabel={`编辑 ${item.name}`}>
+          <PenIcon size={15} color={colors.ink3} />
+        </GhostIcon>
+        <GhostIcon
+          onPress={onRemove}
+          accessibilityLabel={`删除 ${item.name}`}
+          pressedStyle={{ backgroundColor: functional.dangerSoft }}
+        >
+          <TrashIcon size={15} color={colors.ink3} />
+        </GhostIcon>
+      </View>
     </View>
   );
 }
@@ -510,33 +412,6 @@ const statics = StyleSheet.create({
     lineHeight: 34,
     color: colors.ink,
   },
-  noteBar: {
-    flexDirection: 'row',
-    gap: spacing.s3,
-    borderRadius: radius.m,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: seasons.spring.soft,
-    padding: spacing.s4,
-    marginBottom: spacing.s3,
-  },
-  noteIcon: {
-    marginTop: 2,
-  },
-  noteBody: {
-    flex: 1,
-  },
-  noteTitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '700',
-    color: seasons.spring.deep,
-  },
-  noteText: {
-    ...type.caption,
-    lineHeight: 19,
-    color: colors.ink2,
-    marginTop: 3,
-  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,10 +424,16 @@ const statics = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: spacing.s4,
   },
+  /** 固定高(=容器 44)+ 无行高 + textAlignVertical 居中(theme.ts 验证过的模式)。
+   *  paddingTop 6 与 inputText 同源的 CJK 视觉配重(字形在 em 框内偏上,净下压 ~3px) */
   searchInput: {
     flex: 1,
-    ...inputText,
+    height: 44,
+    fontSize: 15,
     color: colors.ink,
+    paddingTop: 6,
+    paddingBottom: 0,
+    textAlignVertical: 'center',
   },
   clearText: {
     ...type.caption,
@@ -563,25 +444,21 @@ const statics = StyleSheet.create({
     gap: spacing.s2,
   },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s2,
     backgroundColor: colors.surface,
     borderRadius: radius.m,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
-    paddingHorizontal: spacing.s4,
-    paddingTop: 13,
-    paddingBottom: 10,
+    paddingVertical: spacing.s3,
+    paddingLeft: spacing.s4,
+    paddingRight: spacing.s2,
   },
   rowMain: {
-    gap: 7,
-  },
-  rowTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.s3,
-  },
-  rowGrow: {
     flex: 1,
     minWidth: 0,
+    gap: 7,
   },
   titleLine: {
     flexDirection: 'row',
@@ -594,11 +471,6 @@ const statics = StyleSheet.create({
     fontWeight: '600',
     color: colors.ink,
     flexShrink: 1,
-  },
-  idno: {
-    ...type.caption,
-    ...tabularNums,
-    color: colors.ink3,
   },
   statusBadge: {
     borderRadius: 6,
@@ -638,38 +510,22 @@ const statics = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '600',
   },
-  ops: {
+  /** 右上角操作位:横排两枚,与标题行对齐(不随内容垂直居中下沉) */
+  trail: {
     flexDirection: 'row',
-    gap: spacing.s2,
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-    borderStyle: 'dashed',
+    gap: 2,
+    alignSelf: 'flex-start',
   },
-  op: {
-    height: 36,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  /** 幽灵弱化:28×28 视觉 + hitSlop 8 = 44 热区;常态无底色 */
+  ghostBtn: {
+    width: 28,
+    height: 28,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  opDel: {
-    backgroundColor: functional.dangerSoft,
-    borderColor: functional.dangerLine,
-  },
-  opText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
-    color: colors.ink2,
-  },
-  opTextDel: {
-    color: functional.danger,
+  ghostBtnPressed: {
+    backgroundColor: colors.surface2,
   },
   emptyWrap: {
     alignItems: 'center',

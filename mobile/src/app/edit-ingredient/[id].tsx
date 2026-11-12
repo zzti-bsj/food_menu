@@ -16,7 +16,7 @@ import { fetchVocab, getIngredient, updateIngredient } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/auth/auth-context';
 import { splitList } from '@/utils/text';
-import { colors } from '@/theme/tokens';
+import { colors, functional } from '@/theme/tokens';
 import { pagePad, spacing, type } from '@/theme/theme';
 
 const LIMITS = {
@@ -58,7 +58,7 @@ export default function EditIngredientScreen() {
   const toast = useToast();
 
   const { data: item, loading, error, reload } = useAsync(() => getIngredient(Number(id)), [id]);
-  const { data: vocab } = useAsync(() => fetchVocab(), []);
+  const { data: vocab, error: vocabError, reload: reloadVocab } = useAsync(() => fetchVocab(), []);
 
   const [form, setForm] = useState<IngredientForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof IngredientForm, string>>>({});
@@ -211,6 +211,15 @@ export default function EditIngredientScreen() {
           <View style={statics.back} />
         </View>
 
+        {/* 词表选项加载失败:chip 组会整体空白,必须显式可重试 */}
+        {!!vocabError && (
+          <Pressable onPress={reloadVocab} hitSlop={8} style={statics.vocabError}>
+            <Text style={[type.caption, { color: functional.danger }]}>
+              选项词表加载失败:{vocabError}(点按重试)
+            </Text>
+          </Pressable>
+        )}
+
         <ImagePickField uri={form.image} kind="leaf" onChange={(uri) => set('image', uri)} />
 
         <SectionLabel label="基本信息" style={statics.sectionLabel} />
@@ -221,7 +230,7 @@ export default function EditIngredientScreen() {
               onChangeText={(v) => set('name', v)}
               onBlur={() => setErrors((p) => ({ ...p, name: validateField('name') ?? undefined }))}
               error={!!errors.name}
-              placeholder="食材名(库内唯一)"
+              placeholder="请输入食材名称"
               maxLength={LIMITS.name}
             />
           </FormField>
@@ -230,7 +239,7 @@ export default function EditIngredientScreen() {
               value={form.aliases}
               onChangeText={(v) => set('aliases', v)}
               error={!!errors.aliases}
-              placeholder="如「薯蓣,淮山」"
+              placeholder="请输入别名"
               maxLength={LIMITS.aliases}
             />
           </FormField>
@@ -279,7 +288,7 @@ export default function EditIngredientScreen() {
               value={form.season_note}
               onChangeText={(v) => set('season_note', v)}
               error={!!errors.season_note}
-              placeholder="全年"
+              placeholder="请输入时令备注"
               maxLength={LIMITS.season_note}
             />
           </FormField>
@@ -288,7 +297,7 @@ export default function EditIngredientScreen() {
               value={form.caution}
               onChangeText={(v) => set('caution', v)}
               error={!!errors.caution}
-              placeholder="不适宜人群与注意事项,可留空"
+              placeholder="请输入食用注意"
               maxLength={LIMITS.caution}
               height={80}
             />
@@ -303,6 +312,7 @@ export default function EditIngredientScreen() {
               <FormTextarea
                 value={form.classic_note}
                 onChangeText={(v) => set('classic_note', v)}
+                placeholder="请输入典籍注脚"
                 error={!!errors.classic_note}
                 maxLength={LIMITS.classic_note}
                 height={80}
@@ -369,6 +379,9 @@ const statics = StyleSheet.create({
   sectionLabel: {
     marginTop: spacing.s5,
     marginBottom: spacing.s2,
+  },
+  vocabError: {
+    marginBottom: spacing.s3,
   },
   lastField: {
     marginBottom: -spacing.s5,

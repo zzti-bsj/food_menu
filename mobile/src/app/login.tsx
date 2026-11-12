@@ -10,7 +10,7 @@ import { useAuth } from '@/auth/auth-context';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { inputText, pagePad, radius, shadows, spacing, type } from '@/theme/theme';
+import { cursorProps, inputText, pagePad, radius, shadows, spacing, type } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 const PHONE_RE = /^1\d{10}$/;
@@ -119,7 +119,7 @@ export default function LoginScreen() {
           <Text style={statics.label}>
             手机号 <Text style={statics.required}>*</Text>
           </Text>
-          <TextInput
+          <TextInput {...cursorProps}
             style={[statics.input, fieldErrors.phone && statics.inputError]}
             value={phone}
             onChangeText={(v) => {
@@ -158,7 +158,7 @@ export default function LoginScreen() {
             )}
           </View>
           <View style={[statics.inputWrap, fieldErrors.password && statics.inputError]}>
-            <TextInput
+            <TextInput {...cursorProps}
               style={statics.passwordInput}
               value={password}
               onChangeText={(v) => {

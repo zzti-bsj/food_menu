@@ -5,8 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PanelPop, Seal, Sticker } from '@/components/brand';
-import { BowlIcon, ChevronRightIcon, LeafLineIcon } from '@/components/icons';
-import { listDishGroups, listIngredientGroups } from '@/api/content-api';
+import { BowlIcon, ChevronRightIcon, LeafLineIcon } from '@/components/icons';import { listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/auth/auth-context';
 import { currentTerm, type SeasonKey } from '@/domain/solar-terms';
@@ -95,7 +94,7 @@ export default function WorkshopScreen() {
         </PanelPop>
       </Pressable>
 
-      {/* 审核待办:有待办 = 朱砂实底(白字);无 = 普通白卡 */}
+      {/* 审核待办:有待办 = 秋琥珀淡底(待审核语义色);无 = 普通白卡 */}
       <View
         style={[
           statics.statCard,
@@ -105,7 +104,7 @@ export default function WorkshopScreen() {
       >
         <View style={statics.statHead}>
           <View style={statics.urgentTitleRow}>
-            <Text style={[statics.statTitle, todoHot && { color: colors.surface }]}>审核待办</Text>
+            <Text style={statics.statTitle}>审核待办</Text>
             {(reviewCounts?.pendingTotal ?? 0) > 0 && (
               <View style={statics.urgentBadge}>
                 <Text style={statics.urgentBadgeText}>{reviewCounts!.pendingTotal}</Text>
@@ -117,15 +116,15 @@ export default function WorkshopScreen() {
             onPress={() => router.push('/review')}
             style={statics.statLink}
           >
-            <Text style={[statics.statLinkText, todoHot && { color: colors.surface }]}>去审核</Text>
-            <ChevronRightIcon size={12} color={accent.deep} />
+            <Text style={[statics.statLinkText, todoHot && { color: seasons.autumn.deep }]}>去审核</Text>
+            <ChevronRightIcon size={12} color={todoHot ? seasons.autumn.deep : accent.deep} />
           </Pressable>
         </View>
         {reviewCounts ? (
           <View style={statics.chipRow}>
-            <Pill tone="info" onDark={todoHot} label={`待审核 ${reviewCounts.pendingTotal} 条`} />
+            <Pill tone="seal" label="待审核" count={reviewCounts.pendingTotal} suffix="条" />
             {reviewCounts.withDoubts > 0 && (
-              <Pill tone="warn" onDark={todoHot} label={`含存疑 ${reviewCounts.withDoubts}`} />
+              <Pill tone="warn" label={`含存疑 ${reviewCounts.withDoubts}`} />
             )}
           </View>
         ) : (
@@ -137,9 +136,22 @@ export default function WorkshopScreen() {
   );
 }
 
-/** 状态药丸(设计稿 .stat-chip;sc-info 蓝 / sc-ok 绿 / sc-warn 琥珀 / sc-bad 红 / 默认透明) */
-function Pill({ tone, label, onDark = false }: { tone?: 'info' | 'ok' | 'warn' | 'bad'; label: string; onDark?: boolean }) {
+/** 状态药丸(设计稿 .stat-chip;seal 朱砂底+冰蓝数字 / info 蓝 / ok 绿 / warn 琥珀 / bad 红)。
+ *  朱砂药丸的红蓝配:数字用冬季淡蓝(#E2F0FA,对朱砂 5.6:1),正文白字。 */
+function Pill({
+  tone,
+  label,
+  count,
+  suffix,
+}: {
+  tone?: 'seal' | 'info' | 'ok' | 'warn' | 'bad';
+  label: string;
+  /** 数字段(seal 态冰蓝高亮) */
+  count?: number;
+  suffix?: string;
+}) {
   const toneMap = {
+    seal: { bg: brand.seal, fg: colors.surface },
     info: { bg: seasons.winter.soft, fg: seasons.winter.deep },
     ok: { bg: seasons.spring.soft, fg: seasons.spring.deep },
     warn: { bg: seasons.autumn.soft, fg: seasons.autumn.deep },
@@ -147,22 +159,16 @@ function Pill({ tone, label, onDark = false }: { tone?: 'info' | 'ok' | 'warn' |
   } as const;
   const t = tone ? toneMap[tone] : null;
   return (
-    <View
-      style={[
-        statics.pill,
-        t && { backgroundColor: t.bg },
-        onDark && { backgroundColor: 'rgba(255,255,255,0.16)', borderColor: 'rgba(255,255,255,0.35)' },
-      ]}
-    >
-      <Text
-        style={[
-          statics.pillText,
-          t && { color: t.fg },
-          onDark && { color: colors.surface },
-        ]}
-      >
-        {label}
-      </Text>
+    <View style={[statics.pill, t && { backgroundColor: t.bg, borderColor: t.bg }]}>
+      {count === undefined ? (
+        <Text style={[statics.pillText, t && { color: t.fg }]}>{label}</Text>
+      ) : (
+        <Text style={[statics.pillText, t && { color: t.fg }]}>
+          {label}{' '}
+          <Text style={[tabularNums, statics.pillCount, { color: seasons.winter.soft }]}>{count}</Text>
+          {suffix ? ` ${suffix}` : ''}
+        </Text>
+      )}
     </View>
   );
 }
@@ -251,10 +257,10 @@ const statics = StyleSheet.create({
     borderColor: colors.line,
     padding: spacing.s4,
   },
-  /** 有待办:朱砂实底(白字白药丸) */
+  /** 有待办:秋琥珀淡底(待审核语义色,不做大色块) */
   todoCardHot: {
-    backgroundColor: brand.seal,
-    borderColor: brand.seal,
+    backgroundColor: seasons.autumn.soft,
+    borderColor: seasons.autumn.soft,
   },
   urgentTitleRow: {
     flexDirection: 'row',
@@ -265,7 +271,7 @@ const statics = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: seasons.autumn.main,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
@@ -318,5 +324,11 @@ const statics = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '700',
     color: colors.ink,
+  },
+  /** 朱砂药丸的冰蓝数字(红蓝配,对比 5.6:1) */
+  pillCount: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
   },
 });

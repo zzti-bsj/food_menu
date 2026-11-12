@@ -158,8 +158,8 @@ def delete_ingredient(ingredient_id: int) -> bool:
         conn.close()
 
 
-_USER_FIELDS = ("phone", "password_hash", "nickname", "role", "status")
-_USER_SELECT = "id,phone,password_hash,nickname,role,status"
+_USER_FIELDS = ("phone", "password_hash", "nickname", "avatar", "role", "status")
+_USER_SELECT = "id,phone,password_hash,nickname,avatar,role,status"
 
 
 def insert_user(record: dict) -> None:
@@ -215,7 +215,7 @@ def list_users() -> list[dict]:
         conn.close()
 
 
-_USER_WRITABLE = ("nickname", "role", "status", "password_hash")
+_USER_WRITABLE = ("nickname", "avatar", "role", "status", "password_hash")
 
 
 def update_user(user_id: int, fields: dict) -> bool:

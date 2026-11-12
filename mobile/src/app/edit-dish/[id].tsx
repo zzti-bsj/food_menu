@@ -60,7 +60,7 @@ export default function EditDishScreen() {
   const toast = useToast();
 
   const { data: dish, loading, error, reload } = useAsync(() => getDish(Number(id)), [id]);
-  const { data: vocab } = useAsync(() => fetchVocab(), []);
+  const { data: vocab, error: vocabError, reload: reloadVocab } = useAsync(() => fetchVocab(), []);
 
   const [form, setForm] = useState<DishForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof DishForm, string>>>({});
@@ -208,6 +208,15 @@ export default function EditDishScreen() {
           <View style={statics.back} />
         </View>
 
+        {/* 词表选项加载失败:chip 组会整体空白,必须显式可重试 */}
+        {!!vocabError && (
+          <Pressable onPress={reloadVocab} hitSlop={8} style={statics.vocabError}>
+            <Text style={[type.caption, { color: functional.danger }]}>
+              选项词表加载失败:{vocabError}(点按重试)
+            </Text>
+          </Pressable>
+        )}
+
         {/* 封面图:上传/更换/移除(保存后随 PATCH 一并生效) */}
         <ImagePickField uri={form.image} kind="bowl" onChange={(uri) => set('image', uri)} />
 
@@ -219,7 +228,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('name', v)}
               onBlur={() => setErrors((p) => ({ ...p, name: validateField('name') ?? undefined }))}
               error={!!errors.name}
-              placeholder="菜名(库内唯一)"
+              placeholder="请输入菜名"
               maxLength={LIMITS.name}
             />
           </FormField>
@@ -236,7 +245,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('style', v)}
               onBlur={() => setErrors((p) => ({ ...p, style: validateField('style') ?? undefined }))}
               error={!!errors.style}
-              placeholder="菜系,烹饪方式"
+              placeholder="请输入菜系和做法"
               maxLength={LIMITS.style}
             />
           </FormField>
@@ -246,7 +255,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('calories', v)}
               onBlur={() => setErrors((p) => ({ ...p, calories: validateField('calories') ?? undefined }))}
               error={!!errors.calories}
-              placeholder="约350千卡"
+              placeholder="请输入热量估算"
               maxLength={LIMITS.calories}
             />
           </FormField>
@@ -264,7 +273,7 @@ export default function EditDishScreen() {
                 value={form.caution}
                 onChangeText={(v) => set('caution', v)}
                 error={!!errors.caution}
-                placeholder="如「脾胃虚寒者少食」"
+                placeholder="请输入忌口提示"
                 maxLength={LIMITS.caution}
                 height={80}
               />
@@ -286,7 +295,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('main_ingredients', v)}
               onBlur={() => setErrors((p) => ({ ...p, main_ingredients: validateField('main_ingredients') ?? undefined }))}
               error={!!errors.main_ingredients}
-              placeholder="白萝卜 半根,鸡胸肉 1块"
+              placeholder="请输入主料"
               maxLength={LIMITS.main_ingredients}
               height={80}
             />
@@ -301,7 +310,7 @@ export default function EditDishScreen() {
               value={form.extras}
               onChangeText={(v) => set('extras', v)}
               error={!!errors.extras}
-              placeholder="姜丝 适量,生抽 1勺"
+              placeholder="请输入辅料"
               maxLength={LIMITS.extras}
               height={80}
             />
@@ -318,7 +327,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('steps', v)}
               onBlur={() => setErrors((p) => ({ ...p, steps: validateField('steps') ?? undefined }))}
               error={!!errors.steps}
-              placeholder={'1. 白萝卜去皮切块\n2. 鸡胸肉焯水后同煮'}
+              placeholder="请输入烹饪步骤"
               maxLength={LIMITS.steps}
               height={160}
             />
@@ -329,6 +338,7 @@ export default function EditDishScreen() {
               onChangeText={(v) => set('benefits', v)}
               onBlur={() => setErrors((p) => ({ ...p, benefits: validateField('benefits') ?? undefined }))}
               error={!!errors.benefits}
+              placeholder="请输入养生好处"
               maxLength={LIMITS.benefits}
             />
           </FormField>
@@ -336,6 +346,7 @@ export default function EditDishScreen() {
             <FormTextarea
               value={form.story}
               onChangeText={(v) => set('story', v)}
+              placeholder="请输入风味故事"
               error={!!errors.story}
               maxLength={LIMITS.story}
               height={80}
@@ -346,6 +357,7 @@ export default function EditDishScreen() {
               <FormTextarea
                 value={form.remark}
                 onChangeText={(v) => set('remark', v)}
+                placeholder="请输入备注"
                 error={!!errors.remark}
                 maxLength={LIMITS.remark}
                 height={80}
@@ -412,6 +424,9 @@ const statics = StyleSheet.create({
   sectionLabel: {
     marginTop: spacing.s5,
     marginBottom: spacing.s2,
+  },
+  vocabError: {
+    marginBottom: spacing.s3,
   },
   lastField: {
     marginBottom: -spacing.s5,

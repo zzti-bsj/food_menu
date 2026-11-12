@@ -147,3 +147,14 @@ export function CheckIcon({ size = 20, color }: IconProps) {
     </Svg>
   );
 }
+
+/** 省略号(列表行溢出操作菜单) */
+export function DotsThreeIcon({ size = 18, color }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Circle cx={5} cy={12} r={1.8} fill={color} />
+      <Circle cx={12} cy={12} r={1.8} fill={color} />
+      <Circle cx={19} cy={12} r={1.8} fill={color} />
+    </Svg>
+  );
+}

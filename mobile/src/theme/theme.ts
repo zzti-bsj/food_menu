@@ -5,6 +5,7 @@
  * 取主层(偏移最大层)翻译;Android 用 elevation 视觉近似。
  */
 import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { colors } from './tokens';
 
 /** §4 间距(4pt 基准) */
 export const spacing = {
@@ -109,6 +110,10 @@ export const inputTextMultiline: TextStyle = {
   paddingVertical: 12,
   textAlignVertical: 'top',
 };
+
+/** 输入光标/选区颜色:墨灰。系统默认光标高饱和(鲜绿/亮蓝),在暖纸底上过重显突兀;
+ *  墨灰细线与「墨字」语言一致。所有 TextInput 展开 {...cursorProps} 统一。 */
+export const cursorProps = { selectionColor: colors.ink2 } as const;
 
 /** §4 z-index 层级 */
 export const z = {

@@ -1,11 +1,12 @@
-/** 食材流水线(工坊 push,对照 pipeline.html):
- *  block「为哪个节气补货?」±2 快捷 chips + 「全部 24 节气 ⌄」展开;
- *  运行后 steps-card 五行 stepper(绿点 + 动态 s-note 药丸)+ res-group 三分组
+/** 食材流水线(工坊 push,对照 pipeline.html + v1.2 品牌语言):
+ *  春粉彩 Hero(「为哪个节气补货?」+ 白底 chips + 星光)→ 运行按钮;
+ *  结果 = 五步时间线 stepper(连线 + 同色影圆点 + 动态 s-note 药丸)+ 三分组白卡
  *  (入库名称药丸带 mini 签牌 / 存疑 notice-card / 失败明细)。 */
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PanelPop, Sparkle } from '@/components/brand';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { ChevronRightIcon } from '@/components/icons';
 import { runBatch, type BatchResult } from '@/api/workshop-api';
@@ -78,24 +79,42 @@ export default function PipelineScreen() {
         <View style={statics.back} />
       </View>
 
-      {/* Step 1 · 选节气 */}
-      <Text style={statics.blockLabel}>为哪个节气补货?</Text>
-      <View style={statics.chipWrap}>
-        {quickTerms.map((t) => (
-          <Chip key={t} label={t} selected={term === t} onPress={() => setTerm(t)} />
-        ))}
-        <Chip label={`${now} · 今`} selected={term === now} onPress={() => setTerm(now)} />
-        <Chip label={ALL_LABEL} selected={showAll} onPress={() => setShowAll((s) => !s)} chevron />
-      </View>
-      {showAll && (
-        <View style={[statics.chipWrap, statics.allWrap]}>
-          {allTerms.map((t) => (
-            <Chip key={t} label={t} selected={term === t} onPress={() => setTerm(t)} />
-          ))}
+      {/* 春粉彩 Hero:选节气(chips 白底描边,面板语言 §2.6)+ 星光 */}
+      <PanelPop season="spring">
+        <View style={statics.hero}>
+          <View style={statics.heroHead}>
+            <View style={statics.heroGrow}>
+              <Text style={statics.heroTitle}>为哪个节气补货?</Text>
+              <Text style={statics.heroSub}>按节气批量推荐当令食材,生成档案入库待审核</Text>
+            </View>
+            <Sparkle size={20} />
+          </View>
+          <View style={statics.chipWrap}>
+            {quickTerms.map((t) => (
+              <Chip key={t} label={t} selected={term === t} onPress={() => setTerm(t)} />
+            ))}
+            <Chip label={`${now} · 今`} selected={term === now} onPress={() => setTerm(now)} />
+            <Chip label={ALL_LABEL} selected={showAll} onPress={() => setShowAll((s) => !s)} chevron />
+          </View>
+          {showAll && (
+            <View style={[statics.chipWrap, statics.allWrap]}>
+              {allTerms.map((t) => (
+                <Chip key={t} label={t} selected={term === t} onPress={() => setTerm(t)} />
+              ))}
+            </View>
+          )}
         </View>
-      )}
+      </PanelPop>
+
       <View style={statics.runWrap}>
-        <PrimaryButton label={`运行流水线 · ${term}`} loading={running} onPress={run} />
+        <PrimaryButton
+          label={`运行流水线 · ${term}`}
+          loading={running}
+          onPress={run}
+          from={spring.main}
+          to={spring.deep}
+          shadowColor={spring.deep}
+        />
       </View>
       {!!error && (
         <Text accessibilityRole="alert" style={[type.caption, { color: functional.danger, marginTop: spacing.s2 }]}>
@@ -103,21 +122,25 @@ export default function PipelineScreen() {
         </Text>
       )}
 
-      {/* 运行进度(steps-card;完成态展示) */}
+      {/* 运行进度:五步时间线(连线 + 序号圆 + 动态药丸) */}
       {result && (
         <>
           <View style={[statics.stepsCard, shadows.card.android]}>
             {STEPS.map((s, i) => (
-              <View key={s} style={[statics.stepRow, i === STEPS.length - 1 && statics.stepRowLast]}>
-                <View style={[statics.stepDot, i === STEPS.length - 1 && { backgroundColor: accent.main }]}>
-                  <Text style={statics.stepDotText}>{i + 1}</Text>
+              <View key={s} style={statics.stepRow}>
+                <View style={statics.stepRail}>
+                  <View style={[statics.stepDot, i === STEPS.length - 1 && { backgroundColor: accent.main }]}>
+                    <Text style={statics.stepDotText}>{i + 1}</Text>
+                  </View>
+                  {i < STEPS.length - 1 && <View style={statics.stepLine} />}
                 </View>
-                <View style={statics.stepGrow}>
-                  <Text style={statics.stepTitle}>{s}</Text>
-                </View>
-                <View style={statics.stepNote}>
-                  <Text style={statics.stepNoteText}>{stepNotes[i]}</Text>
-                </View>
+                <Text style={statics.stepTitle}>{s}</Text>
+                <View style={statics.stepSpring} />
+                {stepNotes[i] !== undefined && (
+                  <View style={statics.stepNote}>
+                    <Text style={statics.stepNoteText}>{stepNotes[i]}</Text>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -174,6 +197,7 @@ function normalize(v: unknown): string {
   return String(v ?? '');
 }
 
+/** 面板内 chip:白底描边(§2.6 面板语言);选中 = 季主色实底白字 */
 function Chip({
   label,
   selected,
@@ -192,7 +216,7 @@ function Chip({
       onPress={onPress}
       style={({ pressed }) => [
         statics.termChip,
-        selected && { backgroundColor: accent.main, borderColor: accent.main },
+        selected && { backgroundColor: spring.main, borderColor: spring.main },
         pressed && { opacity: 0.85 },
       ]}
     >
@@ -204,6 +228,7 @@ function Chip({
   );
 }
 
+/** 结果分组:标题 + 计数药丸 + 白卡内容容器 */
 function ResGroup({
   head,
   count,
@@ -229,7 +254,7 @@ function ResGroup({
           <Text style={[tabularNums, statics.countPillText, { color: t.fg }]}>{count}</Text>
         </View>
       </View>
-      {children}
+      <View style={[statics.resBody, shadows.card.android]}>{children}</View>
     </View>
   );
 }
@@ -265,10 +290,32 @@ const statics = StyleSheet.create({
     fontWeight: '600',
     color: colors.ink,
   },
-  blockLabel: {
+  hero: {
+    padding: spacing.s5,
+    gap: spacing.s3,
+  },
+  heroHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.s3,
+  },
+  heroGrow: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  heroTitle: {
+    fontFamily: fontDisplay,
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.ink,
+  },
+  heroSub: {
     ...type.caption,
-    color: colors.ink3,
-    marginBottom: spacing.s2,
+    lineHeight: 18,
+    color: colors.ink2,
   },
   chipWrap: {
     flexDirection: 'row',
@@ -276,7 +323,7 @@ const statics = StyleSheet.create({
     gap: spacing.s2,
   },
   allWrap: {
-    marginTop: spacing.s2,
+    marginTop: spacing.s1,
   },
   termChip: {
     flexDirection: 'row',
@@ -298,7 +345,7 @@ const statics = StyleSheet.create({
     marginTop: spacing.s3,
   },
   stepsCard: {
-    marginTop: spacing.s4,
+    marginTop: spacing.s5,
     backgroundColor: colors.surface,
     borderRadius: radius.m,
     borderWidth: StyleSheet.hairlineWidth,
@@ -307,13 +354,14 @@ const statics = StyleSheet.create({
   },
   stepRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.s3,
-    paddingBottom: 18,
-    position: 'relative',
+    minHeight: 40,
   },
-  stepRowLast: {
-    paddingBottom: 0,
+  stepRail: {
+    alignItems: 'center',
+    width: 27,
+    alignSelf: 'stretch',
   },
   stepDot: {
     width: 27,
@@ -322,6 +370,11 @@ const statics = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: spring.main,
+    shadowColor: spring.deep,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 2,
     zIndex: 1,
   },
   stepDotText: {
@@ -331,17 +384,22 @@ const statics = StyleSheet.create({
     fontWeight: '700',
     color: colors.surface,
   },
-  stepGrow: {
+  stepLine: {
     flex: 1,
-    minWidth: 0,
+    width: 2,
+    marginVertical: 2,
+    borderRadius: 1,
+    backgroundColor: colors.line,
   },
   stepTitle: {
     ...type.body,
     fontWeight: '700',
     color: colors.ink,
   },
+  stepSpring: {
+    flex: 1,
+  },
   stepNote: {
-    alignSelf: 'center',
     backgroundColor: spring.soft,
     borderRadius: 6,
     paddingHorizontal: 7,
@@ -356,7 +414,7 @@ const statics = StyleSheet.create({
     color: spring.deep,
   },
   resGroup: {
-    marginTop: spacing.s4,
+    marginTop: spacing.s5,
   },
   resHead: {
     flexDirection: 'row',
@@ -379,6 +437,14 @@ const statics = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '700',
   },
+  resBody: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    padding: spacing.s3,
+    gap: spacing.s2,
+  },
   nameChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -388,7 +454,7 @@ const statics = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bg,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
@@ -416,12 +482,11 @@ const statics = StyleSheet.create({
     color: colors.ink,
   },
   noticeCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.m,
+    backgroundColor: colors.surface2,
+    borderRadius: radius.s,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
     padding: spacing.s3,
-    marginBottom: spacing.s2,
     gap: 2,
   },
   noticeName: {

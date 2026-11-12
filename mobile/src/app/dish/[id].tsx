@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CalorieRing, ChefBadge, OrnDivider, PanelPop } from '@/components/brand';
+import { CalorieRing, ChefBadge, OrnDivider, PanelPop, Sparkle } from '@/components/brand';
 import { SectionLabel } from '@/components/ui/section-label';
 import { FoodImage } from '@/components/content/food-image';
 import { PrimaryButton } from '@/components/ui/primary-button';
@@ -68,15 +68,27 @@ export default function DishDetailScreen() {
           <View style={statics.back} />
         </View>
 
-        {/* 粉彩 Hero + 图 */}
+        {/* 粉彩 Hero + 节气标签 */}
         <PanelPop season={season}>
           <View style={statics.hero}>
             <View style={statics.heroMeta}>
-              <ChefBadge category={dish.category} />
+              <View style={statics.heroTopRow}>
+                <ChefBadge category={dish.category} />
+                <View style={statics.heroSpring} />
+                <Sparkle size={18} />
+              </View>
               <Text style={statics.heroName}>{dish.name}</Text>
-              <Text style={statics.heroSub}>
-                {[cuisine, method].filter(Boolean).join(' · ')} · 当令 {terms.join('、')}
-              </Text>
+              <Text style={statics.heroSub}>{[cuisine, method].filter(Boolean).join(' · ')}</Text>
+              <View style={statics.heroTerms}>
+                {terms.map((t) => {
+                  const s = seasons[seasonOfTerm(t)];
+                  return (
+                    <View key={t} style={[statics.heroTerm, { backgroundColor: s.soft }]}>
+                      <Text style={[statics.heroTermText, { color: s.deep }]}>{t}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           </View>
         </PanelPop>
@@ -156,6 +168,17 @@ export default function DishDetailScreen() {
           ))}
         </View>
 
+        {/* 存疑备注(校验/核验遗留说明,仅存在时展示) */}
+        {!!dish.remark && (
+          <>
+            <SectionLabel label="备注" style={statics.sectionLabel} />
+            <View style={statics.cautionBox}>
+              <Text style={statics.cautionTitle}>⚠ 存疑备注</Text>
+              <Text style={statics.cautionText}>{dish.remark}</Text>
+            </View>
+          </>
+        )}
+
         <View style={statics.orn}>
           <OrnDivider />
         </View>
@@ -223,6 +246,30 @@ const statics = StyleSheet.create({
   },
   heroMeta: {
     gap: spacing.s2,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s2,
+  },
+  heroSpring: {
+    flex: 1,
+  },
+  heroTerms: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 2,
+  },
+  heroTerm: {
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  heroTermText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
   },
   heroName: {
     fontFamily: type.display.fontFamily,

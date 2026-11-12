@@ -14,6 +14,8 @@ export interface User {
   phone: string;
   /** 可空:注册时未设置昵称 */
   nickname: string | null;
+  /** 头像 URL,可空(空回退昵称印章);相对路径拼 API_BASE_URL */
+  avatar: string | null;
   role: 'user' | 'admin';
   /** 正常 / 禁用 */
   status: string;

@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `phone`         VARCHAR(20)  NOT NULL COMMENT '手机号,登录凭证,唯一',
   `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希(werkzeug),不存明文',
   `nickname`      VARCHAR(50)  DEFAULT NULL COMMENT '展示名,可空,缺省以手机号掩码显示',
+  `avatar`        VARCHAR(500) DEFAULT NULL COMMENT '头像图片URL/路径,可空(空则回退昵称印章)',
   `role`          VARCHAR(10)  NOT NULL DEFAULT 'user' COMMENT '角色:user/admin,admin功能预留',
   `status`        VARCHAR(10)  NOT NULL DEFAULT '正常' COMMENT '状态:正常/禁用,禁用为封禁预留',
   `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

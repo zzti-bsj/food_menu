@@ -24,18 +24,20 @@ export const brand = {
   seal: '#B03A2E', // 朱砂/印泥红(白字 6.0:1)
   sealLight: '#CC4A3C', // 印章渐变起点
   amber: '#E8912A', // 活力琥珀(贴纸渐变、星光、热量环辅助)
+  /** 美食大厨徽章渐变起点/墨字(dish-generate.html .r-chip.chef-cuisine) */
+  amberLight: '#F2B33C',
+  amberInk: '#4A3208',
   calorieArc: '#C25E2A', // 热量环弧(白托盘上 4.3:1,图形用)
 } as const;
 
 /** 功能色 §2.4 */
 export const functional = {
   success: '#3D7A50',
+  successSoft: '#E4F0E8',
   warning: '#8F5613',
   warningSoft: '#F7EFE2',
   danger: '#AE4436',
   dangerSoft: '#F7E8E5',
-  /** 删除操作胶囊描边(danger 45%,my-content.html .op.del color-mix) */
-  dangerLine: 'rgba(174,68,54,0.45)',
 } as const;
 
 /** 四季 §2.2:主色(白字填充)· 深档(渐变深字)· 淡底 · 粉彩面板渐变三停靠点 */

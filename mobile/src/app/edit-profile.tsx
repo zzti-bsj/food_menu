@@ -1,19 +1,22 @@
 /** 编辑资料(登录 push,对照 edit-profile.html):
- *  头像更换(字段规划中,接口待补 → 点按 Toast 说明)· 昵称 1-50 字(PATCH me,计数器 +
- *  失焦校验,错误文案逐字对齐)· 手机号/角色只读。 */
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+ *  头像上传(圆形预览,拍照/相册/移除动作表,选择即上传并即时 PATCH me.avatar)·
+ *  昵称 1-50 字(计数器 + 失焦校验,错误文案逐字对齐)· 手机号/角色只读。 */
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Seal } from '@/components/brand';
 import { CameraIcon } from '@/components/icons';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast';
+import { useImagePick } from '@/components/content/image-pick-field';
+import { resolveImageUrl } from '@/components/content/food-image';
 import { ApiError } from '@/api/client';
 import { updateMe } from '@/api/auth-api';
 import { useAuth } from '@/auth/auth-context';
 import { brand, colors, functional } from '@/theme/tokens';
-import { inputText, pagePad, radius, spacing, type } from '@/theme/theme';
+import { cursorProps, inputText, pagePad, radius, spacing, type } from '@/theme/theme';
 
 const NICKNAME_MAX = 50;
 
@@ -26,11 +29,52 @@ export default function EditProfileScreen() {
   const [nickname, setNickname] = useState(user?.nickname ?? '');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // 头像即时保存(不进保存按钮):上传成功 → PATCH me.avatar → 同步本地用户
+  const [avatarSaving, setAvatarSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) setNickname(user.nickname ?? '');
+  }, [user]);
+
+  const onAvatarUploaded = useCallback(
+    (url: string) => {
+      setAvatarSaving(true);
+      updateMe({ avatar: url })
+        .then((updated) => {
+          updateLocalUser(updated);
+          toast.showToast('头像已更新');
+        })
+        .catch((e) => {
+          toast.showToast(e instanceof ApiError ? e.message : '网络连接失败,请检查网络后重试');
+        })
+        .finally(() => setAvatarSaving(false));
+    },
+    [toast, updateLocalUser],
+  );
+
+  // hook 须在早退 return 之前调用;回调内部自行判空
+  const { uploading, pick, showActionSheet } = useImagePick(onAvatarUploaded);
+
+  function removeAvatar() {
+    setAvatarSaving(true);
+    updateMe({ avatar: null })
+      .then((updated) => {
+        updateLocalUser(updated);
+        toast.showToast('头像已移除');
+      })
+      .catch((e) => {
+        toast.showToast(e instanceof ApiError ? e.message : '网络连接失败,请检查网络后重试');
+      })
+      .finally(() => setAvatarSaving(false));
+  }
+
+  function pressAvatar() {
+    if (!user || avatarSaving || uploading) return;
+    showActionSheet(!!user.avatar, user.avatar ? removeAvatar : undefined);
+  }
 
   if (!user) {
-    return (
-      <Centered text="请先登录后编辑资料" />
-    );
+    return <Centered text="请先登录后编辑资料" />;
   }
 
   /** 失焦校验,文案逐字对齐后端(web/app.py auth_update_me) */
@@ -76,19 +120,33 @@ export default function EditProfileScreen() {
           <View style={statics.back} />
         </View>
 
-        {/* 头像:字段规划中,接口待补(§10) */}
+        {/* 头像:圆形预览(无图回退昵称印章)+ 相机角标;点按 → 拍照/相册/移除,即时保存 */}
         <View style={statics.avatarRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="更换头像"
-            onPress={() => toast.showToast('头像功能即将上线')}
+            accessibilityLabel={user.avatar ? '更换头像' : '上传头像'}
+            onPress={pressAvatar}
             style={statics.avatarPress}
           >
-            <Seal char={user.nickname?.[0] ?? '食'} />
+            {user.avatar ? (
+              <Image source={{ uri: resolveImageUrl(user.avatar) }} style={statics.avatarImg} contentFit="cover" />
+            ) : (
+              <View style={statics.avatarSealWrap}>
+                <Seal char={user.nickname?.[0] ?? '食'} />
+              </View>
+            )}
             <View style={statics.avatarCam}>
               <CameraIcon color={colors.surface} />
             </View>
+            {(uploading || avatarSaving) && (
+              <View style={statics.avatarMask}>
+                <ActivityIndicator color={colors.surface} />
+              </View>
+            )}
           </Pressable>
+          <Text style={[type.caption, { color: colors.ink3, marginTop: spacing.s2 }]}>
+            点按头像拍照或从相册更换
+          </Text>
         </View>
 
         {/* 昵称 */}
@@ -101,7 +159,7 @@ export default function EditProfileScreen() {
               {nickname.trim().length}/{NICKNAME_MAX}
             </Text>
           </View>
-          <TextInput
+          <TextInput {...cursorProps}
             style={[statics.input, !!error && statics.inputError]}
             value={nickname}
             onChangeText={(v) => {
@@ -109,7 +167,7 @@ export default function EditProfileScreen() {
               if (error) setError(null);
             }}
             onBlur={validate}
-            placeholder="1-50 字"
+            placeholder="请输入昵称"
             placeholderTextColor={colors.ink3}
             maxLength={NICKNAME_MAX + 10}
             textContentType="nickname"
@@ -132,7 +190,7 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={statics.submitWrap}>
-          <PrimaryButton label="保存" loading={saving} onPress={save} />
+          <PrimaryButton label="保存" loading={saving} onPress={() => void save()} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -182,18 +240,46 @@ const statics = StyleSheet.create({
   avatarPress: {
     position: 'relative',
   },
+  avatarSealWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: colors.surface,
+    backgroundColor: colors.surface2,
+  },
+  avatarImg: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: colors.surface,
+  },
   avatarCam: {
     position: 'absolute',
-    right: -4,
-    bottom: -4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.surface,
+  },
+  avatarMask: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 36,
+    backgroundColor: 'rgba(38,35,28,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   field: {
     marginBottom: spacing.s5,

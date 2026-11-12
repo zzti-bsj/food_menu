@@ -48,7 +48,7 @@ def fake_users(monkeypatch):
     def _update_user(user_id, fields):
         if user_id not in USERS:
             return False
-        allowed = ("nickname", "role", "status", "password_hash")
+        allowed = ("nickname", "avatar", "role", "status", "password_hash")
         USERS[user_id].update({k: v for k, v in fields.items() if k in allowed})
         return True
 
@@ -146,3 +146,22 @@ def test_me_patch_password(fake_users, client):
 
 def test_me_patch_requires_login(fake_users, client):
     assert client.patch("/api/auth/me", json={"nickname": "阿明"}).status_code == 401
+
+
+def test_me_patch_avatar(fake_users, client):
+    tok = token(client)
+    ok = send(client, "patch", "/api/auth/me", tok, json={"avatar": "/uploads/abc.png"})
+    assert ok.status_code == 200 and ok.get_json()["user"]["avatar"] == "/uploads/abc.png"
+    assert USERS[1]["avatar"] == "/uploads/abc.png"
+    # 空串视为清空
+    ok = send(client, "patch", "/api/auth/me", tok, json={"avatar": ""})
+    assert ok.status_code == 200 and ok.get_json()["user"]["avatar"] is None
+    assert USERS[1]["avatar"] is None
+    # 显式 null 清空
+    ok = send(client, "patch", "/api/auth/me", tok, json={"avatar": None})
+    assert ok.status_code == 200
+    # 超长拒绝
+    assert send(client, "patch", "/api/auth/me", tok,
+                json={"avatar": "x" * 501}).status_code == 400
+    # 未登录 401
+    assert client.patch("/api/auth/me", json={"avatar": "/a.png"}).status_code == 401

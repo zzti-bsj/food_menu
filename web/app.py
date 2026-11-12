@@ -209,7 +209,7 @@ def set_dish_image():
 
 
 _PHONE_RE = re.compile(r"^1\d{10}$")
-_USER_VIEW_FIELDS = ("id", "phone", "nickname", "role", "status")
+_USER_VIEW_FIELDS = ("id", "phone", "nickname", "avatar", "role", "status")
 
 
 def _user_view(user: dict) -> dict:
@@ -504,7 +504,7 @@ def auth_update_me():
     data = _patch_body()
     if data is None:
         return jsonify({"error": "请求体须为非空 JSON 对象"}), 400
-    unknown = set(data) - {"nickname", "password", "current_password"}
+    unknown = set(data) - {"nickname", "avatar", "password", "current_password"}
     if unknown:
         return jsonify({"error": f"未知字段: {','.join(sorted(unknown))}"}), 400
     me = auth.current_user()
@@ -514,6 +514,12 @@ def auth_update_me():
         if not 1 <= len(nickname) <= 50:
             return jsonify({"error": "nickname 须为1-50字"}), 400
         fields["nickname"] = nickname
+    if "avatar" in data:
+        avatar = data.get("avatar")
+        if avatar is not None and (not isinstance(avatar, str) or len(avatar.strip()) > 500):
+            return jsonify({"error": "avatar 应为不超过500字的 URL 或 null"}), 400
+        # 空串视为清空(回退昵称印章)
+        fields["avatar"] = (avatar.strip() or None) if isinstance(avatar, str) else None
     if "password" in data:
         new_password = str(data.get("password") or "")
         if len(new_password) < 6:
@@ -523,7 +529,7 @@ def auth_update_me():
             return jsonify({"error": "当前密码不正确"}), 403
         fields["password_hash"] = auth.hash_password(new_password)
     if not fields:
-        return jsonify({"error": "须提供 nickname 或 password"}), 400
+        return jsonify({"error": "须提供 nickname、avatar 或 password"}), 400
     if not repository.update_user(me["id"], fields):
         return jsonify({"error": "用户不存在"}), 404
     return jsonify({"user": _user_view(repository.find_user_by_id(me["id"]))})

@@ -66,6 +66,11 @@ export default function IngredientDetailScreen() {
           <FoodImage uri={item.image} kind="leaf" width={96} height={96} />
           <View style={statics.heroMeta}>
             <Text style={statics.heroName}>{item.name}</Text>
+            {!!item.aliases && (
+              <Text style={statics.heroAliases} numberOfLines={1}>
+                别名 {splitList(item.aliases).join('、')}
+              </Text>
+            )}
             <View style={statics.heroBadges}>
               <NatureBadge nature={item.nature} />
               {benefits.map((b) => (
@@ -78,23 +83,20 @@ export default function IngredientDetailScreen() {
         </View>
       </PanelPop>
 
-      {/* 性味归经 */}
+      {/* 性味归经(§2.5:中性枚举统一描边 chip,彩色只留给四气/功效/节气) */}
       <SectionLabel label="性味归经" style={statics.sectionLabel} />
       <View style={statics.card}>
         <View style={statics.infoRow}>
+          <Text style={statics.infoKey}>分类</Text>
+          <NeutralChips items={splitList(item.category)} />
+        </View>
+        <View style={statics.infoRow}>
           <Text style={statics.infoKey}>五味</Text>
-          <View style={statics.flavorChips}>
-            {/* 五味为中性描边 chip(§2.5,层级让位于四气) */}
-            {flavors.map((f) => (
-              <View key={f} style={statics.flavorChip}>
-                <Text style={statics.flavorChipText}>{f}</Text>
-              </View>
-            ))}
-          </View>
+          <NeutralChips items={flavors} />
         </View>
         <View style={statics.infoRow}>
           <Text style={statics.infoKey}>归经</Text>
-          <Text style={statics.infoValue}>{splitList(item.meridian).join('、')}经</Text>
+          <NeutralChips items={splitList(item.meridian).map((m) => `${m}经`)} />
         </View>
         <View style={[statics.infoRow, statics.infoRowLast]}>
           <Text style={statics.infoKey}>时令</Text>
@@ -157,6 +159,19 @@ export default function IngredientDetailScreen() {
   );
 }
 
+/** 中性描边 chip 组(§2.5 语言,五味/分类/归经共用;层级让位于四气徽章与节气标签) */
+function NeutralChips({ items }: { items: string[] }) {
+  return (
+    <View style={statics.neutralChips}>
+      {items.map((label) => (
+        <View key={label} style={statics.neutralChip}>
+          <Text style={statics.neutralChipText}>{label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function Centered({ text, onRetry }: { text: string; onRetry?: () => void }) {
   const router = useRouter();
   return (
@@ -216,6 +231,10 @@ const statics = StyleSheet.create({
     fontWeight: '700',
     color: colors.ink,
   },
+  heroAliases: {
+    ...type.caption,
+    color: colors.ink2,
+  },
   heroBadges: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -268,20 +287,20 @@ const statics = StyleSheet.create({
     color: colors.ink,
     flex: 1,
   },
-  flavorChips: {
+  neutralChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.s1,
     flex: 1,
   },
-  flavorChip: {
+  neutralChip: {
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.lineStrong,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  flavorChipText: {
+  neutralChipText: {
     ...type.caption,
     color: colors.ink2,
   },

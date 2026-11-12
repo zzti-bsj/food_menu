@@ -9,7 +9,7 @@ import { type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { seasons, activeSeason, brand, colors, functional } from '@/theme/tokens';
-import { inputText, inputTextMultiline, radius, spacing, type } from '@/theme/theme';
+import { cursorProps, inputText, inputTextMultiline, radius, spacing, type } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 
@@ -73,7 +73,7 @@ export function FormInput({
   keyboardType?: 'default' | 'numeric';
 }) {
   return (
-    <TextInput
+    <TextInput {...cursorProps}
       style={[statics.input, error && statics.inputError]}
       value={value}
       onChangeText={onChangeText}
@@ -105,7 +105,7 @@ export function FormTextarea({
   height?: number;
 }) {
   return (
-    <TextInput
+    <TextInput {...cursorProps}
       style={[statics.textarea, { height }, error && statics.inputError]}
       value={value}
       onChangeText={onChangeText}

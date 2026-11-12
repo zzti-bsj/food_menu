@@ -1,6 +1,6 @@
 /** 鉴权端点封装 —— 契约见 web/app.py:
  *  register 201 / login 200 → {token, refresh_token, user};me → {user};
- *  PATCH me(body: nickname | password+current_password)→ {user}。 */
+ *  PATCH me(body: nickname | avatar | password+current_password)→ {user}。 */
 import { apiFetch, storeSession } from './client';
 import { clearTokens } from './tokens';
 import type { AuthSession, User } from './types';
@@ -32,9 +32,10 @@ export async function fetchMe(): Promise<User> {
   return data.user;
 }
 
-/** 修改资料。昵称 1-50 字;改密码须带 current_password。 */
+/** 修改资料。昵称 1-50 字;头像为上传返回的 URL(null/空串清空);改密码须带 current_password。 */
 export async function updateMe(fields: {
   nickname?: string;
+  avatar?: string | null;
   password?: string;
   current_password?: string;
 }): Promise<User> {

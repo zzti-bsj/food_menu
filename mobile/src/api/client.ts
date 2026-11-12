@@ -1,5 +1,6 @@
 /** API client:Bearer 注入 / 401 单飞 refresh 轮换重试 / 失败清退并广播 / 接口 error 文案逐字透传。
  *  后端契约(web/app.py):成功直接返回 JSON;失败 {"error": "..."} + 4xx/5xx,无统一信封。 */
+import { Platform } from 'react-native';
 import { API_BASE_URL } from './config';
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from './tokens';
 import type { AuthSession, User } from './types';
@@ -50,7 +51,8 @@ export async function storeSession(pair: AuthSession): Promise<void> {
 /* ---- 单飞 refresh:并发 401 共享同一次轮换;失败时返回携带接口文案的 ApiError ---- */
 let refreshInFlight: Promise<ApiError | null> | null = null;
 
-function refreshOnce(): Promise<ApiError | null> {
+/** 主动轮换一次令牌(原生上传通道 401 时复用同一单飞)。成功返回 null。 */
+export function refreshOnce(): Promise<ApiError | null> {
   refreshInFlight ??= doRefresh().finally(() => {
     refreshInFlight = null;
   });
@@ -119,9 +121,63 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return request<T>(path, options, accessToken, useAuth);
 }
 
-/** 上传接口(multipart):与 apiFetch 同一套 401 refresh 链路;Content-Type 交给 RN 自动生成 boundary。 */
+/** 上传接口:web 走 fetch + FormData(blob);原生走 expo-file-system 原生 multipart 上传
+ *  任务(原生层直读本地文件,RN FormData 在部分设备读不了裁剪输出导致请求发不出去)。
+ *  服务端契约不变:POST multipart 字段 file + Bearer,响应 JSON。401 同一套 refresh 单飞。 */
 export async function apiUpload<T>(path: string, file: { uri: string; name: string; mimeType: string }): Promise<T> {
-  return uploadOnce<T>(path, file, await getAccessToken(), true);
+  if (Platform.OS === 'web') {
+    return uploadOnce<T>(path, file, await getAccessToken(), true);
+  }
+  return nativeUpload<T>(path, file);
+}
+
+async function nativeUpload<T>(
+  path: string,
+  file: { uri: string; name: string; mimeType: string },
+): Promise<T> {
+  // 动态引入:避免 JSON 客户端测试路径加载原生模块
+  const { File, UploadType } = await import('expo-file-system');
+  const send = async (token: string | null) => {
+    const task = new File(file.uri).createUploadTask(`${API_BASE_URL}${path}`, {
+      uploadType: UploadType.MULTIPART,
+      fieldName: 'file',
+      mimeType: file.mimeType,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return task.uploadAsync();
+  };
+
+  let result: Awaited<ReturnType<typeof send>>;
+  try {
+    result = await send(await getAccessToken());
+  } catch {
+    throw new ApiError('网络连接失败,请检查网络后重试', 0);
+  }
+  if (result.status === 401) {
+    const refreshError = await refreshOnce();
+    if (!refreshError) {
+      result = await send(await getAccessToken());
+    } else {
+      await clearTokens();
+      if (sessionActive) {
+        sessionActive = false;
+        unauthorizedListeners.forEach((fn) => fn());
+      }
+      throw refreshError;
+    }
+  }
+  if (result.status < 200 || result.status >= 300) {
+    try {
+      const data = JSON.parse(result.body) as { error?: unknown };
+      if (typeof data?.error === 'string') {
+        throw new ApiError(data.error, result.status);
+      }
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+    }
+    throw new ApiError(`请求失败(${result.status})`, result.status);
+  }
+  return JSON.parse(result.body) as T;
 }
 
 async function uploadOnce<T>(
@@ -131,7 +187,13 @@ async function uploadOnce<T>(
   allowRefresh: boolean,
 ): Promise<T> {
   const form = new FormData();
-  form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+  if (Platform.OS === 'web') {
+    // RN-web 不支持 { uri } 文件部分:先取 blob 再传
+    const blob = await fetch(file.uri).then((res) => res.blob());
+    form.append('file', blob, file.name);
+  } else {
+    form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+  }
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {

@@ -2,14 +2,16 @@
  *  资料头部(粉彩卡:头像章 + 相机角标 + 昵称/角色/掩码·ID,点按 → 编辑资料)+
  *  入口列表(私有食单带计数 / 官方库审核 / 用户管理[admin] / 设置)。退出在设置页。 */
 import { type ReactNode } from 'react';
+import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PanelPop, Seal } from '@/components/brand';
+import { PanelPop, Seal, Sparkle } from '@/components/brand';
 import { CameraIcon, ChevronRightIcon, GearIcon, LeafLineIcon, PenIcon, ShieldIcon } from '@/components/icons';
 import { useAuth } from '@/auth/auth-context';
 import { listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
+import { resolveImageUrl } from '@/components/content/food-image';
 import type { Dish, Ingredient } from '@/api/types';
 import { colors, seasons, activeSeason } from '@/theme/tokens';
 import { fontDisplay, pagePad, radius, shadows, spacing, type } from '@/theme/theme';
@@ -27,7 +29,7 @@ export default function MineScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // 入口计数:本人私有内容(三态均算);官方库内容不计入
+  // 入口计数:与私有食单口径一致,仅「已通过」(待审核在审核台;已驳回在审核台可删除)
   const { data: mine } = useAsync(async () => {
     const [dishGroups, ingredientGroups] = await Promise.all([
       listDishGroups(),
@@ -35,10 +37,9 @@ export default function MineScreen() {
     ]);
     const mineOf = (rows: (Dish | Ingredient)[]): number =>
       rows.filter((row) => row.user_id === user?.id).length;
-    // 计数口径与私有食单一致:已通过 + 已驳回(待审核不算数)
     return {
-      dishes: mineOf(dishGroups.已通过) + mineOf(dishGroups.已驳回),
-      ingredients: mineOf(ingredientGroups.已通过) + mineOf(ingredientGroups.已驳回),
+      dishes: mineOf(dishGroups.已通过),
+      ingredients: mineOf(ingredientGroups.已通过),
     };
   }, [user?.id]);
 
@@ -76,7 +77,16 @@ export default function MineScreen() {
             <PanelPop season={activeSeason}>
               <View style={statics.profile}>
                 <View style={statics.avatarWrap}>
-                  <Seal char={user.nickname?.[0] ?? '食'} />
+                  {user.avatar ? (
+                    <Image
+                      source={{ uri: resolveImageUrl(user.avatar) }}
+                      style={statics.avatarImg}
+                      contentFit="cover"
+                      accessibilityLabel="头像"
+                    />
+                  ) : (
+                    <Seal char={user.nickname?.[0] ?? '食'} />
+                  )}
                   <View style={statics.avatarCam}>
                     <CameraIcon color={colors.surface} />
                   </View>
@@ -110,7 +120,6 @@ export default function MineScreen() {
               icon={<PenIcon color={accent.deep} />}
               iconBg={accent.soft}
               title="我的菜谱"
-              sub="仅本人与管理员可见"
               count={mine ? `${mine.dishes} 道` : undefined}
               onPress={() => router.push('/my-dishes')}
             />
@@ -118,9 +127,7 @@ export default function MineScreen() {
               icon={<LeafLineIcon color={seasons.spring.deep} />}
               iconBg={seasons.spring.soft}
               title="收录食材"
-              sub="仅本人与管理员可见"
               count={mine ? `${mine.ingredients} 味` : undefined}
-              last={user.role !== 'admin'}
               onPress={() => router.push('/my-ingredients')}
             />
             {user.role === 'admin' && (
@@ -153,6 +160,9 @@ export default function MineScreen() {
           </Pressable>
         </View>
       )}
+
+      {/* AI 生成声明:一行小灰字,低调提示(不抢视觉) */}
+      <Text style={statics.aiNote}>食材与菜谱由 AI 生成,仅供参考</Text>
     </ScrollView>
   );
 }
@@ -161,7 +171,7 @@ interface EntryRowProps {
   icon: ReactNode;
   iconBg: string;
   title: string;
-  sub: string;
+  sub?: string;
   count?: string;
   tag?: string;
   last?: boolean;
@@ -181,7 +191,7 @@ function EntryRow({ icon, iconBg, title, sub, count, tag, last, onPress }: Entry
       </View>
       <View style={statics.entryGrow}>
         <Text style={statics.entryTitle}>{title}</Text>
-        <Text style={statics.entrySub}>{sub}</Text>
+        {!!sub && <Text style={statics.entrySub}>{sub}</Text>}
       </View>
       {!!count && (
         <View style={statics.entryCount}>
@@ -234,6 +244,13 @@ const statics = StyleSheet.create({
   },
   avatarWrap: {
     position: 'relative',
+  },
+  avatarImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
   avatarCam: {
     position: 'absolute',
@@ -372,5 +389,13 @@ const statics = StyleSheet.create({
   loginBtnText: {
     ...type.bodyStrong,
     color: colors.surface,
+  },
+  /** AI 生成声明:居中一行,13px 辅助灰,不构成视觉焦点 */
+  aiNote: {
+    ...type.caption,
+    color: colors.ink3,
+    textAlign: 'center',
+    marginTop: spacing.s6,
+    paddingHorizontal: pagePad,
   },
 });
