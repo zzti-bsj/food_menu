@@ -18,12 +18,12 @@ class SolarTermIngredientRecommender:
         self.client = client or LLMClient.for_role("recommend")
         self.vocab = load_vocab()
 
-    def recommend(self, term: str) -> list[str]:
-        """返回推荐食材名列表;该节气已无可推荐时返回空列表;节气非法则抛错。"""
+    def recommend(self, term: str, user_id: int | None = None) -> list[str]:
+        """返回可见范围内推荐食材名列表;该节气已无可推荐时返回空列表;节气非法则抛错。"""
         if term not in self.vocab.solar_term_index:
             raise ValueError(f"非法节气: {term},合法值见 data/vocab/词表-节气.md")
 
-        existing = repository.list_names_by_solar_terms(self._nearby_terms(term))
+        existing = repository.list_names_by_solar_terms(self._nearby_terms(term), owner=user_id)
         template = Template(PROMPT_FILE.read_text(encoding="utf-8"))
         user = template.render(term=term, existing=existing)
 

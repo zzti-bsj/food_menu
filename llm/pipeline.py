@@ -19,7 +19,7 @@ class IngredientPipeline:
         self.verifier = verifier or IngredientVerifier()
         self.max_revisions = max_revisions
 
-    def run(self, name: str) -> dict:
+    def run(self, name: str, user_id: int | None = None) -> dict:
         """跑完整流程;stage 取值 inserted / invalid / rejected / duplicate;存疑入库附 doubts。"""
         feedback = None
         last = {"stage": "invalid", "errors": ["流水线未产出结果"]}
@@ -39,9 +39,9 @@ class IngredientPipeline:
 
             verdict, problems = self.verifier.verify(record)
             if verdict == "pass":
-                return self._insert(name, record)
+                return self._insert(name, record, user_id)
             if verdict == "存疑":
-                result = self._insert(name, record)
+                result = self._insert(name, record, user_id)
                 if result["stage"] == "inserted":
                     result["doubts"] = problems
                 return result
@@ -51,9 +51,9 @@ class IngredientPipeline:
         last["name"] = name
         return last
 
-    def _insert(self, name: str, record: dict) -> dict:
+    def _insert(self, name: str, record: dict, user_id: int | None = None) -> dict:
         try:
-            repository.insert_ingredient(record)
+            repository.insert_ingredient(record, user_id)
         except IntegrityError:
             return {"name": name, "stage": "duplicate"}
         return {"name": name, "stage": "inserted"}

@@ -1,12 +1,12 @@
 /** 食材百科(Tab 3):摘要行 + 底部筛选弹窗(同菜谱库模式)。
  *  档案卡固定宽(48%)固定高(舞台 104 + 文字区 96),溢出内容截断,完整信息进详情。
  *  布局对齐全部显式声明,条目永远从左上排起。 */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DefaultImage, NatureBadge } from '@/components/brand';
+import { DefaultImage, NatureBadge, Seal } from '@/components/brand';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { listApprovedIngredients } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
@@ -14,7 +14,7 @@ import { currentTerm, nearbyTerms } from '@/domain/solar-terms';
 import { splitList } from '@/utils/text';
 import type { Ingredient } from '@/api/types';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { pagePad, radius, shadows, spacing, type, z } from '@/theme/theme';
+import { fontDisplay, pagePad, radius, shadows, spacing, type, z } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 const ALL = '全部';
@@ -24,6 +24,8 @@ export default function IngredientsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: ingredients, loading, error, reload } = useAsync(listApprovedIngredients, []);
+  // 聚焦即重拉:审核/生成后返回本页数据即时生效
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
   const near: string[] = nearbyTerms(currentTerm());
   const [category, setCategory] = useState<string>(ALL);
@@ -50,18 +52,19 @@ export default function IngredientsScreen() {
   return (
     <View style={[statics.flex, { paddingTop: insets.top }]}>
       <View style={statics.titleRow}>
-        <Text style={[type.serifTitle, { color: colors.ink }]}>食材百科</Text>
+        <Seal char="材" />
+        <Text style={statics.pageTitle}>食材百科</Text>
       </View>
       {/* 摘要行:两个维度 chip 即弹窗入口(独立成行,避免与标题挤压溢出) */}
       <View style={statics.filterBar}>
         <FilterChip
           label={`分类 · ${category}`}
-          selected={category !== ALL}
+          variant={category !== ALL ? 'seal' : 'warm'}
           onPress={() => setSheetOpen(true)}
         />
         <FilterChip
           label={`当令 · ${seasonalOnly ? '开' : '关'}`}
-          selected={seasonalOnly}
+          variant={seasonalOnly ? 'seal' : 'warm'}
           onPress={() => setSheetOpen(true)}
         />
       </View>
@@ -172,9 +175,20 @@ const statics = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s3,
     paddingHorizontal: pagePad,
     marginTop: spacing.s3,
     marginBottom: spacing.s2,
+  },
+  pageTitle: {
+    fontFamily: fontDisplay,
+    fontSize: 28,
+    lineHeight: 38,
+    fontWeight: '600',
+    letterSpacing: 2,
+    color: colors.ink,
   },
   filterBar: {
     flexDirection: 'row',

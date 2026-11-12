@@ -56,6 +56,9 @@ export interface Ingredient {
   solar_terms: string;
   user_id: number | null;
   status: ContentStatus;
+  /** 创建/更新时间(后端 DATETIME,列表卡「#id · 日期」展示用) */
+  created_at?: string;
+  updated_at?: string;
 }
 
 /** 菜品(db/schema.sql dish 表) */
@@ -87,4 +90,18 @@ export interface Dish {
   remark: string | null;
   user_id: number | null;
   status: ContentStatus;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** 封闭值域(GET /api/vocab,编辑表单选项源;benefits = 词条→白话释义) */
+export interface ContentVocab {
+  solar_terms: string[];
+  categories: string[];
+  dish_categories: string[];
+  cuisines: string[];
+  natures: string[];
+  flavors: string[];
+  meridians: string[];
+  benefits: Record<string, string>;
 }

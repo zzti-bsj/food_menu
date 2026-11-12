@@ -1,10 +1,12 @@
 /** 食材详情(二级 push,对照 ingredient-detail.html):
  *  默认图 Hero · 性味归经(四气徽章/五味中性 chip/归经行)· 功效徽章 · 当令节气带 ·
  *  食用注意 · 典籍引文卡。 */
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DefaultImage, NatureBadge, OrnDivider, PanelPop, QuoteCard } from '@/components/brand';
+import { SectionLabel } from '@/components/ui/section-label';
 import { FoodImage } from '@/components/content/food-image';
 import { getIngredient } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
@@ -20,6 +22,13 @@ export default function IngredientDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: item, loading, error, reload } = useAsync(() => getIngredient(Number(id)), [id]);
+
+  // 聚焦即重拉:编辑保存后返回详情即时生效
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
 
   if (loading) {
     return <Centered text="加载中…" />;
@@ -70,7 +79,7 @@ export default function IngredientDetailScreen() {
       </PanelPop>
 
       {/* 性味归经 */}
-      <SectionLabel label="性味归经" />
+      <SectionLabel label="性味归经" style={statics.sectionLabel} />
       <View style={statics.card}>
         <View style={statics.infoRow}>
           <Text style={statics.infoKey}>五味</Text>
@@ -94,7 +103,7 @@ export default function IngredientDetailScreen() {
       </View>
 
       {/* 当令节气带 */}
-      <SectionLabel label="当令节气" />
+      <SectionLabel label="当令节气" style={statics.sectionLabel} />
       <View style={statics.termBand}>
         {terms.map((t) => {
           const isNear = near.includes(t);
@@ -125,7 +134,7 @@ export default function IngredientDetailScreen() {
       {/* 食用注意(warningSoft 圆角盒 + ⚠ 标题,色+符号双编码,无边框) */}
       {item.caution && (
         <>
-          <SectionLabel label="食用注意" />
+          <SectionLabel label="食用注意" style={statics.sectionLabel} />
           <View style={statics.cautionBox}>
             <Text style={statics.cautionTitle}>⚠ 食用注意</Text>
             <Text style={statics.cautionText}>{item.caution}</Text>
@@ -136,7 +145,7 @@ export default function IngredientDetailScreen() {
       {/* 典籍注脚 */}
       {item.classic_note && (
         <>
-          <SectionLabel label="典籍注脚" />
+          <SectionLabel label="典籍注脚" style={statics.sectionLabel} />
           <QuoteCard note={item.classic_note} />
         </>
       )}
@@ -146,10 +155,6 @@ export default function IngredientDetailScreen() {
       </View>
     </ScrollView>
   );
-}
-
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={[type.sectionLabel, statics.sectionLabel, { color: colors.ink3 }]}>{label}</Text>;
 }
 
 function Centered({ text, onRetry }: { text: string; onRetry?: () => void }) {

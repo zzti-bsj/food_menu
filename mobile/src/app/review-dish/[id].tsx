@@ -118,7 +118,7 @@ export default function ReviewDishScreen() {
           </View>
         )}
         <Text style={[type.caption, { color: colors.ink3, marginTop: spacing.s4 }]}>
-          状态:{dish.status} · ID {dish.id} · 通过后 C 端可见
+          ID {dish.id} · {dish.status}
         </Text>
       </ScrollView>
 

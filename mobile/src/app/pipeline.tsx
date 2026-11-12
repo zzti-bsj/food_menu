@@ -1,5 +1,5 @@
 /** 食材流水线(工坊 push,对照 pipeline.html):
- *  block「为哪个节气补货?(默认当前 ±2)」±2 快捷 chips + 「全部 24 节气 ⌄」展开;
+ *  block「为哪个节气补货?」±2 快捷 chips + 「全部 24 节气 ⌄」展开;
  *  运行后 steps-card 五行 stepper(绿点 + 动态 s-note 药丸)+ res-group 三分组
  *  (入库名称药丸带 mini 签牌 / 存疑 notice-card / 失败明细)。 */
 import { useState, type ReactNode } from 'react';
@@ -20,13 +20,7 @@ const accent = seasons[activeSeason];
 const ALL_LABEL = '全部 24 节气';
 
 /** 五步文案(设计稿原文);s-note 数值由批次结果动态填充 */
-const STEPS: { title: string; desc: string }[] = [
-  { title: '推荐食材', desc: '节气词表 + 时令口径,LLM 推荐候选' },
-  { title: '填充档案', desc: '性味归经、功效、当令节气逐字段生成' },
-  { title: '结构校验', desc: '字段类型 + 词表值域逐项核对' },
-  { title: '事实核验', desc: '三态判定:pass / fail / 存疑' },
-  { title: '入库待审核', desc: '直接入库 + 存疑入库(标注存疑点)' },
-];
+const STEPS = ['推荐食材', '填充档案', '结构校验', '事实核验', '入库待审核'];
 
 export default function PipelineScreen() {
   const router = useRouter();
@@ -85,7 +79,7 @@ export default function PipelineScreen() {
       </View>
 
       {/* Step 1 · 选节气 */}
-      <Text style={statics.blockLabel}>为哪个节气补货?(默认当前 ±2)</Text>
+      <Text style={statics.blockLabel}>为哪个节气补货?</Text>
       <View style={statics.chipWrap}>
         {quickTerms.map((t) => (
           <Chip key={t} label={t} selected={term === t} onPress={() => setTerm(t)} />
@@ -114,13 +108,12 @@ export default function PipelineScreen() {
         <>
           <View style={[statics.stepsCard, shadows.card.android]}>
             {STEPS.map((s, i) => (
-              <View key={s.title} style={[statics.stepRow, i === STEPS.length - 1 && statics.stepRowLast]}>
+              <View key={s} style={[statics.stepRow, i === STEPS.length - 1 && statics.stepRowLast]}>
                 <View style={[statics.stepDot, i === STEPS.length - 1 && { backgroundColor: accent.main }]}>
                   <Text style={statics.stepDotText}>{i + 1}</Text>
                 </View>
                 <View style={statics.stepGrow}>
-                  <Text style={statics.stepTitle}>{s.title}</Text>
-                  <Text style={statics.stepDesc}>{s.desc}</Text>
+                  <Text style={statics.stepTitle}>{s}</Text>
                 </View>
                 <View style={statics.stepNote}>
                   <Text style={statics.stepNoteText}>{stepNotes[i]}</Text>
@@ -346,12 +339,6 @@ const statics = StyleSheet.create({
     ...type.body,
     fontWeight: '700',
     color: colors.ink,
-  },
-  stepDesc: {
-    ...type.caption,
-    color: colors.ink3,
-    marginTop: 2,
-    lineHeight: 19,
   },
   stepNote: {
     alignSelf: 'center',

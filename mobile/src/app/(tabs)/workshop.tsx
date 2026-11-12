@@ -1,34 +1,39 @@
 /** 工坊(Tab 4)—— 对照 workshop.html:印章衬线页题 + 两张粉彩入口大卡(春·食材流水线 / 秋·菜品生成+贴纸)
  *  + 最近批次白卡(药丸 chips)+ 审核待办白卡。定位:单件流转;大批量走桌面审核台。 */
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PanelPop, Seal, Sticker } from '@/components/brand';
 import { BowlIcon, ChevronRightIcon, LeafLineIcon } from '@/components/icons';
-import { getLastBatch } from '@/api/workshop-api';
 import { listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
+import { useAuth } from '@/auth/auth-context';
 import { currentTerm, type SeasonKey } from '@/domain/solar-terms';
-import type { Dish } from '@/api/types';
-import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
+import type { Dish, Ingredient } from '@/api/types';
+import { brand, colors, functional, seasons, activeSeason } from '@/theme/tokens';
 import { fontDisplay, pagePad, radius, shadows, spacing, tabularNums, type, z } from '@/theme/theme';
 
 export default function WorkshopScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: lastBatch } = useAsync(getLastBatch, []);
-  const { data: reviewCounts } = useAsync(async () => {
+  const { user } = useAuth();
+  // 待办口径 = 「你能审的」:admin 全量;登录用户仅自己名下;未登录无可审(0)
+  const { data: reviewCounts, reload: reloadCounts } = useAsync(async () => {
     const [ing, dish] = await Promise.all([listIngredientGroups(), listDishGroups()]);
-    const pendingDishes = dish.待审核;
+    const isAdmin = user?.role === 'admin';
+    const mine = <T extends { user_id: number | null }>(rows: T[]): T[] =>
+      rows.filter((r) => isAdmin || r.user_id === user?.id);
+    const pendingDishes = mine(dish.待审核);
+    const pendingIngredients = mine(ing.待审核);
     return {
-      pendingTotal: ing.待审核.length + pendingDishes.length,
-      pendingIng: ing.待审核.length,
-      pendingDish: pendingDishes.length,
-      withDoubts: pendingDishes.filter((d: Dish) => !!d.remark).length,
+      pendingTotal: pendingIngredients.length + pendingDishes.length,
+      withDoubts: pendingDishes.filter((d) => !!d.remark).length,
     };
-  }, []);
-
-  const batch = lastBatch;
+  }, [user?.id, user?.role]);
+  const todoHot = (reviewCounts?.pendingTotal ?? 0) > 0;
+  // 聚焦即重拉:审核/生成后返回本页数据即时生效
+  useFocusEffect(useCallback(() => { reloadCounts(); }, [reloadCounts]));
 
   return (
     <ScrollView
@@ -55,7 +60,7 @@ export default function WorkshopScreen() {
             <View style={statics.pipeGrow}>
               <Text style={statics.pipeTitle}>食材流水线</Text>
               <Text style={statics.pipeSub}>
-                选一个节气,批量推荐食材并生成档案{'\n'}推荐 → 填充 → 校验 → 核验 → 入库待审核
+                按节气批量推荐当令食材并生成档案
               </Text>
             </View>
             <ChevronRightIcon size={20} color={colors.ink3} />
@@ -82,7 +87,7 @@ export default function WorkshopScreen() {
                 <Sticker label="双厨师" />
               </View>
               <Text style={statics.pipeSub}>
-                健康厨师 · 减脂低卡线|美食大厨 · 菜系线{'\n'}生成 → 校验 → 核验 → 入库待审核
+                健康厨师 · 减脂低卡线|美食大厨 · 菜系线
               </Text>
             </View>
             <ChevronRightIcon size={20} color={colors.ink3} />
@@ -90,54 +95,37 @@ export default function WorkshopScreen() {
         </PanelPop>
       </Pressable>
 
-      {/* 最近批次(白卡 + 药丸 chips) */}
-      <View style={[statics.statCard, shadows.card.android]}>
+      {/* 审核待办:有待办 = 朱砂实底(白字);无 = 普通白卡 */}
+      <View
+        style={[
+          statics.statCard,
+          shadows.card.android,
+          todoHot && statics.todoCardHot,
+        ]}
+      >
         <View style={statics.statHead}>
-          <Text style={statics.statTitle}>
-            最近批次{batch ? ` · ${batch.term}` : ''}
-          </Text>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => router.push('/pipeline')}
-            style={statics.statLink}
-          >
-            <Text style={statics.statLinkText}>查看</Text>
-            <ChevronRightIcon size={12} color={accent.deep} />
-          </Pressable>
-        </View>
-        {batch ? (
-          <View style={statics.chipRow}>
-            <Pill tone="info" label={`推荐 ${batch.recommended.length} 个候选`} />
-            <Pill tone="ok" label={`入库 ${batch.inserted.length}`} />
-            <Pill tone="warn" label={`存疑 ${Object.keys(batch.doubts ?? {}).length}`} />
-            <Pill tone="bad" label={`失败 ${(batch.failed ?? []).length}`} />
+          <View style={statics.urgentTitleRow}>
+            <Text style={[statics.statTitle, todoHot && { color: colors.surface }]}>审核待办</Text>
+            {(reviewCounts?.pendingTotal ?? 0) > 0 && (
+              <View style={statics.urgentBadge}>
+                <Text style={statics.urgentBadgeText}>{reviewCounts!.pendingTotal}</Text>
+              </View>
+            )}
           </View>
-        ) : (
-          <Text style={[type.caption, { color: colors.ink3 }]}>
-            本轮服务启动后还没有跑过批次,从上方流水线开始
-          </Text>
-        )}
-      </View>
-
-      {/* 审核待办(白卡) */}
-      <View style={[statics.statCard, shadows.card.android]}>
-        <View style={statics.statHead}>
-          <Text style={statics.statTitle}>审核待办</Text>
           <Pressable
             accessibilityRole="link"
             onPress={() => router.push('/review')}
             style={statics.statLink}
           >
-            <Text style={statics.statLinkText}>去审核</Text>
+            <Text style={[statics.statLinkText, todoHot && { color: colors.surface }]}>去审核</Text>
             <ChevronRightIcon size={12} color={accent.deep} />
           </Pressable>
         </View>
         {reviewCounts ? (
           <View style={statics.chipRow}>
-            <Pill tone="info" label={`待审核 ${reviewCounts.pendingTotal} 条`} />
-            <Pill label={`食材 ${reviewCounts.pendingIng} · 菜品 ${reviewCounts.pendingDish}`} />
+            <Pill tone="info" onDark={todoHot} label={`待审核 ${reviewCounts.pendingTotal} 条`} />
             {reviewCounts.withDoubts > 0 && (
-              <Pill tone="warn" label={`含存疑 ${reviewCounts.withDoubts}`} />
+              <Pill tone="warn" onDark={todoHot} label={`含存疑 ${reviewCounts.withDoubts}`} />
             )}
           </View>
         ) : (
@@ -145,15 +133,12 @@ export default function WorkshopScreen() {
         )}
       </View>
 
-      <Text style={[type.caption, statics.hint, { color: colors.ink3 }]}>
-        最近批次对应 GET /api/batch/last;工坊覆盖单件流转与快速处理,大批量作业建议使用桌面端审核台
-      </Text>
     </ScrollView>
   );
 }
 
 /** 状态药丸(设计稿 .stat-chip;sc-info 蓝 / sc-ok 绿 / sc-warn 琥珀 / sc-bad 红 / 默认透明) */
-function Pill({ tone, label }: { tone?: 'info' | 'ok' | 'warn' | 'bad'; label: string }) {
+function Pill({ tone, label, onDark = false }: { tone?: 'info' | 'ok' | 'warn' | 'bad'; label: string; onDark?: boolean }) {
   const toneMap = {
     info: { bg: seasons.winter.soft, fg: seasons.winter.deep },
     ok: { bg: seasons.spring.soft, fg: seasons.spring.deep },
@@ -162,8 +147,22 @@ function Pill({ tone, label }: { tone?: 'info' | 'ok' | 'warn' | 'bad'; label: s
   } as const;
   const t = tone ? toneMap[tone] : null;
   return (
-    <View style={[statics.pill, t && { backgroundColor: t.bg }]}>
-      <Text style={[statics.pillText, t && { color: t.fg }]}>{label}</Text>
+    <View
+      style={[
+        statics.pill,
+        t && { backgroundColor: t.bg },
+        onDark && { backgroundColor: 'rgba(255,255,255,0.16)', borderColor: 'rgba(255,255,255,0.35)' },
+      ]}
+    >
+      <Text
+        style={[
+          statics.pillText,
+          t && { color: t.fg },
+          onDark && { color: colors.surface },
+        ]}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
@@ -252,6 +251,32 @@ const statics = StyleSheet.create({
     borderColor: colors.line,
     padding: spacing.s4,
   },
+  /** 有待办:朱砂实底(白字白药丸) */
+  todoCardHot: {
+    backgroundColor: brand.seal,
+    borderColor: brand.seal,
+  },
+  urgentTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s2,
+  },
+  urgentBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  urgentBadgeText: {
+    ...tabularNums,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: colors.surface,
+  },
   statHead: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -293,10 +318,5 @@ const statics = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '700',
     color: colors.ink,
-  },
-  hint: {
-    paddingHorizontal: pagePad,
-    marginTop: spacing.s2,
-    lineHeight: 19,
   },
 });

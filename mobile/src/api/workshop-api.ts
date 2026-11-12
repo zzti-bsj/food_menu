@@ -47,10 +47,6 @@ export function runBatch(term: string): Promise<BatchResult> {
   return apiFetch<BatchResult>('/api/batch', { method: 'POST', body: { term } });
 }
 
-export function getLastBatch(): Promise<BatchResult | null> {
-  return apiFetch<BatchResult | null>('/api/batch/last', { auth: false });
-}
-
 /** 健康厨师:ingredients 非空字符串数组(去重保序由端内做,后端也会做) */
 export function runDishChef(ingredients: string[]): Promise<DishChefResult> {
   return apiFetch<DishChefResult>('/api/dishes', {

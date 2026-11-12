@@ -1,17 +1,18 @@
 /** 菜谱库(Tab 2):摘要行 + 底部筛选弹层(维度可扩展,不随取值增多溢出)。
  *  默认只看当令(当前 ±2,§10 口径);筛选切换后列表回顶,避免滚动位置钳制抖动。 */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DishCard } from '@/components/content/dish-card';
+import { Seal } from '@/components/brand';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { listApprovedDishes } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { SEASON_TERMS, currentTerm, nearbyTerms } from '@/domain/solar-terms';
 import { parseStyle, splitList } from '@/utils/text';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { pagePad, radius, spacing, type, z } from '@/theme/theme';
+import { fontDisplay, pagePad, radius, spacing, type, z } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 const ALL = '全部';
@@ -24,10 +25,12 @@ export default function RecipesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: dishes, loading, error, reload } = useAsync(listApprovedDishes, []);
+  // 聚焦即重拉:审核/生成后返回本页数据即时生效
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
   const now = currentTerm();
   const near: string[] = nearbyTerms(now);
-  const [termFilter, setTermFilter] = useState<TermFilter>(null);
+  const [termFilter, setTermFilter] = useState<TermFilter>(ALL);
   const [method, setMethod] = useState<string>(ALL);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -65,9 +68,10 @@ export default function RecipesScreen() {
     return method === ALL || m === method;
   });
 
-  const termLabel = termFilter === ALL || termFilter === null ? (termFilter === null ? NOW : ALL) : termFilter;
+  const termLabel = termFilter === null ? NOW : (termFilter ?? ALL);
   const methodActive = method !== ALL;
-  const termActive = termFilter !== null;
+  // 非默认(≠全部,含「当令」与具体节气)才显示朱砂;默认「全部」= 琥珀暖色
+  const termActive = termFilter !== ALL;
 
   function resetFilters() {
     setTermFilter(null);
@@ -76,15 +80,26 @@ export default function RecipesScreen() {
 
   return (
     <View style={[statics.flex, { paddingTop: insets.top }]}>
-      <Text style={[type.serifTitle, statics.title, { color: colors.ink }]}>菜谱库</Text>
+      <View style={statics.titleRow}>
+        <Seal char="菜" />
+        <Text style={statics.pageTitle}>菜谱库</Text>
+      </View>
       <Text style={[type.caption, statics.subtitle, { color: colors.ink3 }]}>
-        默认展示当前当令(±2 节气口径)
+        默认展示全部,可按节气与做法筛选
       </Text>
 
       {/* 摘要行:两个维度 chip 即弹层入口(无第三按钮) */}
       <View style={statics.filterBar}>
-        <FilterChip label={`节气 · ${termLabel}`} selected={termActive} onPress={() => setSheetOpen(true)} />
-        <FilterChip label={`做法 · ${method}`} selected={methodActive} onPress={() => setSheetOpen(true)} />
+        <FilterChip
+          label={`节气 · ${termLabel}`}
+          variant={termActive ? 'seal' : 'warm'}
+          onPress={() => setSheetOpen(true)}
+        />
+        <FilterChip
+          label={`做法 · ${method}`}
+          variant={methodActive ? 'seal' : 'warm'}
+          onPress={() => setSheetOpen(true)}
+        />
       </View>
 
       <ScrollView ref={listRef} contentContainerStyle={[statics.list, { paddingBottom: 122 + insets.bottom }]}>
@@ -111,8 +126,8 @@ export default function RecipesScreen() {
             <View style={statics.sheetHandle} />
             <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.sheetGroup]}>节气</Text>
             <View style={statics.chipWrap}>
-              <FilterChip label={NOW} selected={termFilter === null} onPress={() => setTermFilter(null)} />
               <FilterChip label={ALL} selected={termFilter === ALL} onPress={() => setTermFilter(ALL)} />
+              <FilterChip label={NOW} selected={termFilter === null} onPress={() => setTermFilter(null)} />
             </View>
             <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.sheetGroup]}>全年节气</Text>
             <View style={statics.chipWrap}>
@@ -151,9 +166,20 @@ const statics = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  title: {
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s3,
     paddingHorizontal: pagePad,
     marginTop: spacing.s3,
+  },
+  pageTitle: {
+    fontFamily: fontDisplay,
+    fontSize: 28,
+    lineHeight: 38,
+    fontWeight: '600',
+    letterSpacing: 2,
+    color: colors.ink,
   },
   subtitle: {
     paddingHorizontal: pagePad,

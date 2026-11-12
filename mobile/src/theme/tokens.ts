@@ -34,6 +34,8 @@ export const functional = {
   warningSoft: '#F7EFE2',
   danger: '#AE4436',
   dangerSoft: '#F7E8E5',
+  /** 删除操作胶囊描边(danger 45%,my-content.html .op.del color-mix) */
+  dangerLine: 'rgba(174,68,54,0.45)',
 } as const;
 
 /** 四季 §2.2:主色(白字填充)· 深档(渐变深字)· 淡底 · 粉彩面板渐变三停靠点 */

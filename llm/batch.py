@@ -18,9 +18,10 @@ class IngredientBatchPipeline:
         self.pipeline_factory = pipeline_factory
         self.max_workers = max_workers
 
-    def run(self, term: str) -> dict:
-        """返回 {"term","recommended","inserted","failed"};failed 含 stage 与原因。"""
-        names = list(dict.fromkeys(self.recommender.recommend(term)))
+    def run(self, term: str, user_id: int | None = None) -> dict:
+        """返回 {"term","recommended","inserted","failed"};failed 含 stage 与原因。
+        user_id 非空时产出归属该用户,否则为官方(未归属)。"""
+        names = list(dict.fromkeys(self.recommender.recommend(term, user_id=user_id)))
         if not names:
             return {
                 "term": term,
@@ -31,7 +32,9 @@ class IngredientBatchPipeline:
             }
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            results = list(pool.map(lambda n: self.pipeline_factory().run(n), names))
+            results = list(
+                pool.map(lambda n: self.pipeline_factory().run(n, user_id=user_id), names)
+            )
 
         for item in results:
             if item["stage"] in ("invalid", "rejected"):

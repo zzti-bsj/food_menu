@@ -1,10 +1,13 @@
 /** 审核台(工坊 push,对照 review.html):三态计数 + 待审核队列(食材/菜品分段)。
  *  行进详情复审;通过/驳回在详情页操作。大批量作业走桌面审核台。 */
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChefBadge, NatureBadge } from '@/components/brand';
 import { ChevronRightIcon } from '@/components/icons';
+import { useAuth } from '@/auth/auth-context';
+import { SectionLabel } from '@/components/ui/section-label';
 import { listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { parseStyle, splitList } from '@/utils/text';
@@ -19,11 +22,16 @@ export default function ReviewScreen() {
     const [ing, dish] = await Promise.all([listIngredientGroups(), listDishGroups()]);
     return { ing, dish };
   }, []);
+  // 聚焦即重拉:状态变更(审核/删除)后返回本页数据即时生效
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const ing = data?.ing;
   const dish = data?.dish;
-  const pendingIngredients = ing?.待审核 ?? [];
-  const pendingDishes = dish?.待审核 ?? [];
+  // 审核权 = 归属人或 admin:普通用户只审自己名下的待审;admin 超管看全部
+  const pendingIngredients = (ing?.待审核 ?? []).filter((r) => isAdmin || r.user_id === user?.id);
+  const pendingDishes = (dish?.待审核 ?? []).filter((r) => isAdmin || r.user_id === user?.id);
 
   return (
     <ScrollView contentContainerStyle={[statics.content, { paddingTop: insets.top + spacing.s2, paddingBottom: 60 + insets.bottom }]}>
@@ -55,18 +63,14 @@ export default function ReviewScreen() {
       </View>
 
       {/* 食材待审核队列 */}
-      <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.sectionGap]}>
-        食材 · 待审核({pendingIngredients.length})
-      </Text>
+      <SectionLabel label={`食材 · 待审核(${pendingIngredients.length})`} style={statics.sectionGap} />
       {pendingIngredients.map((item) => (
         <IngredientRow key={item.id} item={item} onPress={() => router.push(`/review-ingredient/${item.id}`)} />
       ))}
       {pendingIngredients.length === 0 && !loading && <Empty text="食材队列已清空" />}
 
       {/* 菜品待审核队列 */}
-      <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.sectionGap]}>
-        菜品 · 待审核({pendingDishes.length})
-      </Text>
+      <SectionLabel label={`菜品 · 待审核(${pendingDishes.length})`} style={statics.sectionGap} />
       {pendingDishes.map((item) => (
         <DishRow key={item.id} item={item} onPress={() => router.push(`/review-dish/${item.id}`)} />
       ))}

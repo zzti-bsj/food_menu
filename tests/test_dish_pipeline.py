@@ -38,7 +38,7 @@ def make_pipeline(create_response=CREATED, verify_response=PASS):
 
 @pytest.fixture(autouse=True)
 def _stub_pantry(monkeypatch):
-    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names: [])
+    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names, owner=None: [])
 
 
 def test_verifier_prompt_contains_ingredients_and_dish():
@@ -66,7 +66,7 @@ def test_verifier_returns_doubt_verdict():
 
 def test_pipeline_pass_inserts_converted_record(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_dish", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline()
 
     result = pipeline.run(["白萝卜", "鸡胸肉", "菠菜"])
@@ -90,7 +90,7 @@ def test_pipeline_pass_inserts_converted_record(monkeypatch):
 
 def test_pipeline_doubt_writes_remark_lines_and_returns_doubts(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_dish", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline(verify_response=DOUBT)
 
     result = pipeline.run(["白萝卜"])
@@ -101,7 +101,7 @@ def test_pipeline_doubt_writes_remark_lines_and_returns_doubts(monkeypatch):
 
 def test_pipeline_fail_revision_then_pass(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_dish", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: inserted.append(r))
     pipeline, chef = make_pipeline(verify_response=["{\"verdict\":\"fail\",\"problems\":[\"步骤缺少火候\"]}", PASS])
 
     result = pipeline.run(["白萝卜"])
@@ -114,7 +114,7 @@ def test_pipeline_revision_cap_logs_reject(monkeypatch):
     logged = []
     monkeypatch.setattr(reject_log, "log_reject",
                         lambda name, stage, detail, entity="食材": logged.append((name, stage, entity)))
-    monkeypatch.setattr(repository, "insert_dish", lambda r: None)
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: None)
     pipeline, chef = make_pipeline(verify_response='{"verdict":"fail","problems":["相克"]}')
 
     result = pipeline.run(["白萝卜"])
@@ -127,7 +127,7 @@ def test_pipeline_revision_cap_logs_reject(monkeypatch):
 def test_pipeline_duplicate_name(monkeypatch):
     from pymysql.err import IntegrityError
 
-    def raise_duplicate(record):
+    def raise_duplicate(record, user_id=None):
         raise IntegrityError(1062, "Duplicate entry")
 
     monkeypatch.setattr(repository, "insert_dish", raise_duplicate)
@@ -140,8 +140,8 @@ def test_pipeline_duplicate_name(monkeypatch):
 def test_pipeline_pantry_injected_into_chef_prompt(monkeypatch):
     pantry = [{"name": "白萝卜", "nature": "凉", "flavor": "辛,甘",
                "meridian": "肺,胃", "benefits": "下气消食", "caution": None}]
-    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names: pantry)
-    monkeypatch.setattr(repository, "insert_dish", lambda r: None)
+    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names, owner=None: pantry)
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: None)
     pipeline, chef = make_pipeline()
 
     pipeline.run(["白萝卜"])
@@ -149,7 +149,7 @@ def test_pipeline_pantry_injected_into_chef_prompt(monkeypatch):
 
 
 def test_pipeline_bad_create_json_fails_gracefully(monkeypatch):
-    monkeypatch.setattr(repository, "insert_dish", lambda r: None)
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: None)
     pipeline, _ = make_pipeline(create_response="不是 JSON")
 
     result = pipeline.run(["白萝卜"])
@@ -158,7 +158,7 @@ def test_pipeline_bad_create_json_fails_gracefully(monkeypatch):
 
 
 def test_pipeline_invalid_record_feeds_back_required_fields(monkeypatch):
-    monkeypatch.setattr(repository, "insert_dish", lambda r: None)
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: None)
     bad = json.dumps({"name": "汤"}, ensure_ascii=False)
     pipeline, chef = make_pipeline(create_response=bad)
 

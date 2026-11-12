@@ -45,10 +45,10 @@ def make_pipeline(create_response=CREATED, verify_response=PASS):
 
 @pytest.fixture(autouse=True)
 def _stub_repository(monkeypatch):
-    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names: [])
-    monkeypatch.setattr(repository, "list_dish_names_by_cuisine", lambda cuisine: [])
-    monkeypatch.setattr(repository, "find_dish_by_name", lambda name: None)
-    monkeypatch.setattr(repository, "insert_dish", lambda r: None)
+    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names, owner=None: [])
+    monkeypatch.setattr(repository, "list_dish_names_by_cuisine", lambda cuisine, owner=None: [])
+    monkeypatch.setattr(repository, "find_dish_by_name", lambda name, owner=None: None)
+    monkeypatch.setattr(repository, "insert_dish", lambda r, user_id=None: None)
 
 
 def test_name_mode_invalid_input_short_circuits():
@@ -60,7 +60,7 @@ def test_name_mode_invalid_input_short_circuits():
 
 
 def test_name_mode_duplicate_precheck_skips_llm(monkeypatch):
-    monkeypatch.setattr(repository, "find_dish_by_name", lambda name: {"name": name})
+    monkeypatch.setattr(repository, "find_dish_by_name", lambda name, owner=None: {"name": name})
     pipeline, chef = make_pipeline()
     result = pipeline.run("name", {"name": "宫保鸡丁"})
     assert result["stage"] == "duplicate" and result["name"] == "宫保鸡丁"
@@ -81,7 +81,7 @@ def test_name_mode_not_found_short_circuits_and_logs(monkeypatch):
 
 
 def test_cuisine_mode_pass_inserts_with_known_names_and_story(monkeypatch):
-    monkeypatch.setattr(repository, "list_dish_names_by_cuisine", lambda c: ["麻婆豆腐"])
+    monkeypatch.setattr(repository, "list_dish_names_by_cuisine", lambda c, owner=None: ["麻婆豆腐"])
     pipeline, chef = make_pipeline()
     result = pipeline.run("cuisine", {"cuisine": "川菜"})
     assert result["stage"] == "inserted" and result["name"] == "宫保鸡丁"
@@ -120,7 +120,7 @@ def test_name_mode_rejects_nonempty_excluded(monkeypatch):
 def test_ingredient_mode_happy_path_with_pantry_and_excluded(monkeypatch):
     pantry = [{"name": "白萝卜", "nature": "凉", "flavor": "辛,甘",
                "meridian": "肺,胃", "benefits": "下气消食", "caution": None}]
-    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names: pantry)
+    monkeypatch.setattr(repository, "find_ingredients_by_names", lambda names, owner=None: pantry)
     pipeline, chef = make_pipeline()
     result = pipeline.run("ingredient", {"ingredients": ["白萝卜", "鸡胸肉", "白萝卜"]})
     assert result["stage"] == "inserted"
@@ -185,7 +185,7 @@ def test_story_required_feedback():
 def test_duplicate_on_insert_race(monkeypatch):
     from pymysql.err import IntegrityError
 
-    def raise_duplicate(record):
+    def raise_duplicate(record, user_id=None):
         raise IntegrityError(1062, "Duplicate entry")
 
     monkeypatch.setattr(repository, "insert_dish", raise_duplicate)

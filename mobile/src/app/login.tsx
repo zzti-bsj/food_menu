@@ -10,7 +10,7 @@ import { useAuth } from '@/auth/auth-context';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { pagePad, radius, shadows, spacing, type } from '@/theme/theme';
+import { inputText, pagePad, radius, shadows, spacing, type } from '@/theme/theme';
 
 const accent = seasons[activeSeason];
 const PHONE_RE = /^1\d{10}$/;
@@ -151,7 +151,7 @@ export default function LoginScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="忘记密码"
-                onPress={() => toast.showToast('密码找回接口待上线,可先联系管理员')}
+                onPress={() => toast.showToast('密码找回功能即将上线')}
               >
                 <Text style={[statics.forgot, { color: accent.deep }]}>忘记密码?</Text>
               </Pressable>
@@ -182,7 +182,7 @@ export default function LoginScreen() {
               <EyeIcon off={showPassword} />
             </Pressable>
           </View>
-          <Text style={statics.helper}>密码至少 6 位;支持粘贴与密码管理器自动填充</Text>
+          <Text style={statics.helper}>密码至少 6 位</Text>
           {!!fieldErrors.password && (
             <Text accessibilityRole="alert" style={statics.error}>
               {fieldErrors.password}
@@ -308,7 +308,7 @@ const statics = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.lineStrong,
     paddingHorizontal: 14,
-    ...type.body,
+    ...inputText,
     color: colors.ink,
   },
   inputWrap: {
@@ -322,9 +322,9 @@ const statics = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-    height: 48,
+    height: 46,
     paddingHorizontal: 14,
-    ...type.body,
+    ...inputText,
     color: colors.ink,
   },
   inputError: {

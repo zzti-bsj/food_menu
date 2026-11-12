@@ -53,13 +53,13 @@ export default function SettingsScreen() {
         <View style={statics.row}>
           <View style={statics.rowGrow}>
             <Text style={statics.rowTitle}>入节提醒</Text>
-            <Text style={statics.rowSub}>节气切换当天推送提醒(定时任务预留)</Text>
+            <Text style={statics.rowSub}>节气切换当天提醒你</Text>
           </View>
           <Switch
             value={reminder}
             onValueChange={(v) => {
               setReminder(v);
-              if (v) toast.showToast('已开启入节提醒(推送待上线,当前本地生效)');
+              if (v) toast.showToast('已开启入节提醒');
             }}
             trackColor={{ false: colors.lineStrong, true: functional.success }}
             accessibilityLabel="入节提醒"
@@ -79,9 +79,6 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      <Text style={[type.caption, statics.footnote, { color: colors.ink3 }]}>
-        修改密码入口在登录页「忘记密码」;重置接口待补
-      </Text>
     </ScrollView>
   );
 }
@@ -132,10 +129,6 @@ const statics = StyleSheet.create({
     ...type.body,
     fontWeight: '600',
     color: functional.danger,
-  },
-  footnote: {
-    textAlign: 'center',
-    marginTop: spacing.s2,
   },
   centered: {
     flex: 1,

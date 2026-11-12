@@ -90,6 +90,26 @@ export const type = {
 /** 数字统一 tabular(§3:热量、分量、时间) */
 export const tabularNums: TextStyle = { fontVariant: ['tabular-nums'] };
 
+/** 输入框文字基样式:禁止携带 lineHeight——Android 上「固定高 + 显式行高」会让文字在框内
+ *  上下滚动(字体度量 > 内部可用高);垂直居中交给固定高 + textAlignVertical。
+ *  paddingTop 6 = 视觉配重:CJK 字形在字体 em 框内偏上,按行框居中会显得偏高,下压补偿。 */
+export const inputText: TextStyle = {
+  fontSize: 15,
+  fontWeight: '400',
+  paddingTop: 6,
+  paddingBottom: 0,
+  textAlignVertical: 'center',
+};
+
+/** 多行输入:顶对齐、自带纵向内边距,高度用固定值 + overflow 截断 */
+export const inputTextMultiline: TextStyle = {
+  fontSize: 15,
+  fontWeight: '400',
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+  textAlignVertical: 'top',
+};
+
 /** §4 z-index 层级 */
 export const z = {
   content: 0,

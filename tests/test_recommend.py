@@ -21,7 +21,7 @@ def patch_existing(monkeypatch):
     calls = []
 
     def _patch(names: list[str]):
-        def fake(terms):
+        def fake(terms, owner=None):
             calls.append(terms)
             return names
 

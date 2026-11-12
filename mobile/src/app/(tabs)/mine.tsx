@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PanelPop, Seal } from '@/components/brand';
-import { BookLineIcon, CameraIcon, ChevronRightIcon, GearIcon, PenIcon, ShieldIcon } from '@/components/icons';
+import { CameraIcon, ChevronRightIcon, GearIcon, LeafLineIcon, PenIcon, ShieldIcon } from '@/components/icons';
 import { useAuth } from '@/auth/auth-context';
 import { listDishGroups, listIngredientGroups } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
@@ -35,13 +35,10 @@ export default function MineScreen() {
     ]);
     const mineOf = (rows: (Dish | Ingredient)[]): number =>
       rows.filter((row) => row.user_id === user?.id).length;
+    // 计数口径与私有食单一致:已通过 + 已驳回(待审核不算数)
     return {
-      dishes:
-        mineOf(dishGroups.已通过) + mineOf(dishGroups.待审核) + mineOf(dishGroups.已驳回),
-      ingredients:
-        mineOf(ingredientGroups.已通过) +
-        mineOf(ingredientGroups.待审核) +
-        mineOf(ingredientGroups.已驳回),
+      dishes: mineOf(dishGroups.已通过) + mineOf(dishGroups.已驳回),
+      ingredients: mineOf(ingredientGroups.已通过) + mineOf(ingredientGroups.已驳回),
     };
   }, [user?.id]);
 
@@ -107,26 +104,24 @@ export default function MineScreen() {
             </PanelPop>
           </Pressable>
 
-          {/* 内容 */}
+          {/* 功能入口:单一白色大组包裹 */}
           <View style={[statics.entryGroup, shadows.card.android]}>
             <EntryRow
               icon={<PenIcon color={accent.deep} />}
               iconBg={accent.soft}
-              title="我的私有食单"
+              title="我的菜谱"
               sub="仅本人与管理员可见"
-              count={mine ? `菜品 ${mine.dishes} · 食材 ${mine.ingredients}` : undefined}
-              onPress={() => router.push('/my-content')}
+              count={mine ? `${mine.dishes} 道` : undefined}
+              onPress={() => router.push('/my-dishes')}
             />
-          </View>
-
-          {/* 协作与管理 */}
-          <View style={[statics.entryGroup, shadows.card.android]}>
             <EntryRow
-              icon={<BookLineIcon color={accent.deep} />}
-              iconBg={accent.soft}
-              title="官方库审核"
-              sub="流水线产出的人工终审"
-              onPress={() => router.push('/review')}
+              icon={<LeafLineIcon color={seasons.spring.deep} />}
+              iconBg={seasons.spring.soft}
+              title="收录食材"
+              sub="仅本人与管理员可见"
+              count={mine ? `${mine.ingredients} 味` : undefined}
+              last={user.role !== 'admin'}
+              onPress={() => router.push('/my-ingredients')}
             />
             {user.role === 'admin' && (
               <EntryRow
@@ -139,18 +134,6 @@ export default function MineScreen() {
                 onPress={() => router.push('/admin-users')}
               />
             )}
-          </View>
-
-          {/* 通用 */}
-          <View style={[statics.entryGroup, shadows.card.android]}>
-            <EntryRow
-              icon={<GearIcon size={19} color={seasons.autumn.deep} />}
-              iconBg={seasons.autumn.soft}
-              title="设置"
-              sub="入节提醒 / 退出登录"
-              last
-              onPress={() => router.push('/settings')}
-            />
           </View>
 
         </>

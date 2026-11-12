@@ -6,7 +6,12 @@ import type { AuthSession, User } from './types';
 
 export class ApiError extends Error {
   /** 0 = 网络层失败(后端不可达) */
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+    /** PATCH 校验失败的逐字段明细(「字段: 文案」数组,error=「校验未通过」时附带) */
+    readonly details?: string[],
+  ) {
     super(message);
     this.name = 'ApiError';
   }
@@ -114,6 +119,47 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return request<T>(path, options, accessToken, useAuth);
 }
 
+/** 上传接口(multipart):与 apiFetch 同一套 401 refresh 链路;Content-Type 交给 RN 自动生成 boundary。 */
+export async function apiUpload<T>(path: string, file: { uri: string; name: string; mimeType: string }): Promise<T> {
+  return uploadOnce<T>(path, file, await getAccessToken(), true);
+}
+
+async function uploadOnce<T>(
+  path: string,
+  file: { uri: string; name: string; mimeType: string },
+  accessToken: string | null,
+  allowRefresh: boolean,
+): Promise<T> {
+  const form = new FormData();
+  form.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: form,
+    });
+  } catch {
+    throw new ApiError('网络连接失败,请检查网络后重试', 0);
+  }
+  if (res.status === 401 && allowRefresh) {
+    const refreshError = await refreshOnce();
+    if (!refreshError) {
+      return uploadOnce<T>(path, file, await getAccessToken(), false);
+    }
+    await clearTokens();
+    if (sessionActive) {
+      sessionActive = false;
+      unauthorizedListeners.forEach((fn) => fn());
+    }
+    throw refreshError;
+  }
+  if (!res.ok) {
+    throw await errorFrom(res);
+  }
+  return (await res.json()) as T;
+}
+
 async function request<T>(
   path: string,
   options: ApiOptions,
@@ -156,9 +202,12 @@ async function request<T>(
 
 async function errorFrom(res: Response): Promise<ApiError> {
   try {
-    const data = (await res.json()) as { error?: unknown };
+    const data = (await res.json()) as { error?: unknown; details?: unknown };
     if (typeof data?.error === 'string') {
-      return new ApiError(data.error, res.status);
+      const details = Array.isArray(data.details)
+        ? data.details.filter((d): d is string => typeof d === 'string')
+        : undefined;
+      return new ApiError(data.error, res.status, details);
     }
   } catch {
     // 响应体非 JSON,走下方兜底

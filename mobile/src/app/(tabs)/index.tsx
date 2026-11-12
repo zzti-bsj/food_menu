@@ -1,10 +1,12 @@
 /** 今日(Tab 1)—— 对照 home.html:节气 Hero(粉彩面板)· 当令带(±2 共 5)· 当令食材横滑 · 应季菜谱。
  *  数据:listTerms + 已通过食材/菜品;当前节气端内推算(§domain)。 */
+import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DefaultImage, OrnDivider, PanelPop, Seal, Sparkle } from '@/components/brand';
 import { DishCard } from '@/components/content/dish-card';
+import { SectionLabel } from '@/components/ui/section-label';
 import { listApprovedDishes, listApprovedIngredients, listTerms } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
 import { currentTerm, nearbyTerms, seasonOfTerm, type SeasonKey } from '@/domain/solar-terms';
@@ -25,6 +27,8 @@ export default function TodayScreen() {
     () => Promise.all([listTerms(), listApprovedIngredients(), listApprovedDishes()]),
     [],
   );
+  // 聚焦即重拉:审核/生成后返回本页数据即时生效
+  useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
   const term = currentTerm();
   const near = nearbyTerms(term);
@@ -73,7 +77,7 @@ export default function TodayScreen() {
 
       {/* 当令食材(横滑):无当令数据时保留区块并给出空态,与设计稿结构一致 */}
       <View style={statics.section}>
-        <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.pad]}>当令食材</Text>
+        <SectionLabel label="当令食材" style={statics.pad} />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -93,7 +97,7 @@ export default function TodayScreen() {
           ))}
           {ingredients.length === 0 && !loading && (
             <Text style={[type.caption, statics.foodEmpty, { color: colors.ink3 }]}>
-              暂无当令食材,去工坊跑一条食材流水线吧
+              暂无当令食材
             </Text>
           )}
         </ScrollView>
@@ -101,13 +105,13 @@ export default function TodayScreen() {
 
       {/* 应季菜谱 */}
       <View style={statics.section}>
-        <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.pad]}>应季菜谱</Text>
+        <SectionLabel label="应季菜谱" style={statics.pad} />
         <View style={[statics.pad, statics.sectionGap, statics.dishList]}>
           {dishes.slice(0, 5).map((dish) => (
             <DishCard key={dish.id} dish={dish} onPress={() => router.push(`/dish/${dish.id}`)} />
           ))}
           {dishes.length === 0 && !loading && (
-            <Text style={[type.caption, { color: colors.ink3 }]}>近期暂无当令菜谱,工坊可生成后审核入库</Text>
+            <Text style={[type.caption, { color: colors.ink3 }]}>近期暂无当令菜谱</Text>
           )}
         </View>
       </View>

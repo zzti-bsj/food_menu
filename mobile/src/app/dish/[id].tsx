@@ -1,10 +1,12 @@
 /** 菜品详情(二级 push,对照 dish-detail.html):
  *  粉彩 Hero + 图片/默认占位 · 热量环 · 定量表(tabular)· 步骤时间线 · 养生/忌口 ·
  *  美食大厨 story「味」字卡 · 吸底「开始烹饪」(全屏步骤模式预留)。 */
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalorieRing, ChefBadge, OrnDivider, PanelPop } from '@/components/brand';
+import { SectionLabel } from '@/components/ui/section-label';
 import { FoodImage } from '@/components/content/food-image';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast';
@@ -23,6 +25,13 @@ export default function DishDetailScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { data: dish, loading, error, reload } = useAsync(() => getDish(Number(id)), [id]);
+
+  // 聚焦即重拉:编辑保存后返回详情即时生效
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
 
   if (loading) {
     return <Centered text="加载中…" />;
@@ -90,7 +99,7 @@ export default function DishDetailScreen() {
         </View>
 
         {/* 养生好处 */}
-        <SectionLabel label="养生好处" />
+        <SectionLabel label="养生好处" style={statics.sectionLabel} />
         <View style={[statics.card, statics.padBox]}>
           <Text style={statics.bodyText}>{dish.benefits}</Text>
         </View>
@@ -98,7 +107,7 @@ export default function DishDetailScreen() {
         {/* 味 · 风味与文化背景(美食大厨出品) */}
         {dish.story && (
           <>
-            <SectionLabel label="风味与文化" />
+            <SectionLabel label="风味与文化" style={statics.sectionLabel} />
             <View style={statics.storyCard}>
               <View style={statics.storyBar} />
               <View style={statics.storyBody}>
@@ -110,7 +119,7 @@ export default function DishDetailScreen() {
         )}
 
         {/* 定量表 */}
-        <SectionLabel label={`主料(每份定量)`} />
+        <SectionLabel label="主料(每份定量)" style={statics.sectionLabel} />
         <View style={[statics.card, statics.padBox]}>
           {main.map((item) => (
             <View key={`m-${item.name}`} style={statics.tableRow}>
@@ -132,7 +141,7 @@ export default function DishDetailScreen() {
         </View>
 
         {/* 步骤时间线(§7:序号圆 accent 实底白字 + 渐隐连线,技巧并入步骤) */}
-        <SectionLabel label="烹饪步骤" />
+        <SectionLabel label="烹饪步骤" style={statics.sectionLabel} />
         <View style={[statics.card, statics.padBox]}>
           {steps.map((step, i) => (
             <View key={i} style={statics.stepRow}>
@@ -156,15 +165,11 @@ export default function DishDetailScreen() {
       <View style={[statics.bottomBar, shadows.lift.android, { paddingBottom: insets.bottom + 12 }]}>
         <PrimaryButton
           label="开始烹饪"
-          onPress={() => toast.showToast('全屏烹饪模式预留,即将上线')}
+          onPress={() => toast.showToast('全屏烹饪模式即将上线')}
         />
       </View>
     </View>
   );
-}
-
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={[type.sectionLabel, statics.sectionLabel, { color: colors.ink3 }]}>{label}</Text>;
 }
 
 function Centered({ text, onRetry }: { text: string; onRetry?: () => void }) {

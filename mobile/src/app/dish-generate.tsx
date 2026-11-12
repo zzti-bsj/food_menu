@@ -16,7 +16,7 @@ import { useAsync } from '@/hooks/use-async';
 import { parseStyle, splitList } from '@/utils/text';
 import type { Dish } from '@/api/types';
 import { brand, colors, functional, seasons, activeSeason } from '@/theme/tokens';
-import { fontDisplay, pagePad, radius, shadows, spacing, tabularNums, type } from '@/theme/theme';
+import { inputText, inputTextMultiline, fontDisplay, pagePad, radius, shadows, spacing, tabularNums, type } from '@/theme/theme';
 
 const accent = seasons[activeSeason].main;
 
@@ -69,7 +69,7 @@ export default function DishGenerateScreen() {
     try {
       if (chef === 'health') {
         if (picked.length === 0) {
-          setError('ingredients 须为非空字符串数组(至少 1 项)');
+          setError('请至少添加 1 项食材');
           return;
         }
         setHealthResult(await runDishChef(picked));
@@ -89,7 +89,7 @@ export default function DishGenerateScreen() {
           payload = { name: nameInput.trim() };
         } else {
           if (modeIngredients.length === 0) {
-            setError('ingredients 须为非空字符串数组(至少 1 项)');
+            setError('请至少添加 1 项食材');
             return;
           }
           payload = { ingredients: modeIngredients };
@@ -120,7 +120,7 @@ export default function DishGenerateScreen() {
       </View>
 
       {/* 出品厨师分段(设计稿 .chef-seg) */}
-      <Text style={statics.blockLabel}>出品厨师 · dish.category(词表双值,点选切换表单)</Text>
+      <Text style={statics.blockLabel}>出品厨师</Text>
       <View style={[statics.poolCard, shadows.card.android]}>
         <View style={statics.chefSeg}>
           <Pressable
@@ -156,7 +156,7 @@ export default function DishGenerateScreen() {
 
       {chef === 'health' && (
         <>
-          <Text style={statics.blockLabel}>候选食材 · 对应请求体 ingredients 数组(至少 1 项,自动去重保序)</Text>
+          <Text style={statics.blockLabel}>候选食材(至少 1 项)</Text>
           <View style={[statics.poolCard, shadows.card.android]}>
             {/* 已选池:pick 药丸可删 */}
             <View style={statics.pickWrap}>
@@ -193,7 +193,7 @@ export default function DishGenerateScreen() {
               </Pressable>
             </View>
             <Text style={statics.ruleNote}>
-              流水线按性味配伍产出一道菜;不在库或未采用的候选将列入「弃置」
+              不在库或未采用的候选将列入「弃置」
             </Text>
           </View>
         </>
@@ -201,7 +201,7 @@ export default function DishGenerateScreen() {
 
       {chef === 'cuisine' && (
         <>
-          <Text style={statics.blockLabel}>选择模式 · cuisine 参数(三线互斥)</Text>
+          <Text style={statics.blockLabel}>选择模式</Text>
           <View style={[statics.poolCard, shadows.card.android]}>
             <View style={statics.modeRow}>
               {(
@@ -249,7 +249,7 @@ export default function DishGenerateScreen() {
                 style={statics.input}
                 value={nameInput}
                 onChangeText={setNameInput}
-                placeholder="菜名,如:豉汁蒸排骨(已收录会防重)"
+                placeholder="输入菜名"
                 placeholderTextColor={colors.ink3}
               />
             )}
@@ -289,11 +289,6 @@ export default function DishGenerateScreen() {
                 </View>
               </>
             )}
-            <Text style={statics.ruleNote}>
-              {mode === 'cuisine' && '指定菜系批量产出;story 必填,excluded 须为空'}
-              {mode === 'name' && '按菜名生成;已收录菜名会预检防重'}
-              {mode === 'ingredient' && '按食材组合生成,支持指定口味风格'}
-            </Text>
           </View>
         </>
       )}
@@ -425,7 +420,7 @@ function ResultBlock({
       {dish && (
         <>
           <Text style={[type.sectionLabel, { color: colors.ink3 }, statics.sectionGap]}>
-            落库字段预览 · dish 表全列
+            落库字段预览
           </Text>
           <View style={[statics.fCard, shadows.card.android]}>
             {dishFields.map((f) => (
@@ -453,7 +448,7 @@ function buildFields(dish: Dish, excluded: string[]): { k: string; v: string; mu
     { k: 'steps', v: `${dish.steps.split('\n').filter((l) => l.trim()).length} 步 · 刀工/火候写入步骤(详情见审核页)`, muted: true },
     { k: 'calories', v: dish.calories },
     { k: 'style', v: dish.style },
-    { k: 'solar_terms', v: `${splitList(dish.solar_terms).join(', ')}(升序 ✓)` },
+    { k: 'solar_terms', v: `${splitList(dish.solar_terms).join(', ')}` },
     { k: 'excluded', v: excluded.length > 0 ? excluded.join(', ') : '[](空)' , muted: excluded.length === 0 },
     { k: 'benefits', v: dish.benefits },
     { k: 'caution', v: dish.caution ?? '—', muted: !dish.caution },
@@ -561,13 +556,13 @@ const statics = StyleSheet.create({
   },
   addInput: {
     flex: 1,
-    height: 40,
+    height: 44,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.bg,
     paddingHorizontal: 12,
-    ...type.caption,
+    ...inputText,
     color: colors.ink,
   },
   addBtn: {
@@ -608,13 +603,13 @@ const statics = StyleSheet.create({
     color: colors.ink2,
   },
   input: {
-    height: 44,
+    height: 48,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.bg,
     paddingHorizontal: 12,
-    ...type.caption,
+    ...inputText,
     color: colors.ink,
   },
   runWrap: {

@@ -13,7 +13,7 @@ import { ApiError } from '@/api/client';
 import { updateMe } from '@/api/auth-api';
 import { useAuth } from '@/auth/auth-context';
 import { brand, colors, functional } from '@/theme/tokens';
-import { pagePad, radius, spacing, type } from '@/theme/theme';
+import { inputText, pagePad, radius, spacing, type } from '@/theme/theme';
 
 const NICKNAME_MAX = 50;
 
@@ -81,7 +81,7 @@ export default function EditProfileScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="更换头像"
-            onPress={() => toast.showToast('头像上传接口待补,敬请期待')}
+            onPress={() => toast.showToast('头像功能即将上线')}
             style={statics.avatarPress}
           >
             <Seal char={user.nickname?.[0] ?? '食'} />
@@ -219,7 +219,7 @@ const statics = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.lineStrong,
     paddingHorizontal: 14,
-    ...type.body,
+    ...inputText,
     color: colors.ink,
   },
   inputError: {

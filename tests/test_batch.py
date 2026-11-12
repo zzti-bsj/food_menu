@@ -6,7 +6,7 @@ class FakeRecommender:
     def __init__(self, names):
         self.names = names
 
-    def recommend(self, term: str) -> list[str]:
+    def recommend(self, term: str, user_id: int | None = None) -> list[str]:
         return list(self.names)
 
 
@@ -15,7 +15,7 @@ class FakePipeline:
 
     results: dict[str, dict] = {}
 
-    def run(self, name: str) -> dict:
+    def run(self, name: str, user_id: int | None = None) -> dict:
         return self.results[name]
 
 

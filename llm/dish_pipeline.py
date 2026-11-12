@@ -41,10 +41,10 @@ class DishPipeline:
         self.verifier = verifier or DishVerifier()
         self.max_revisions = max_revisions
 
-    def run(self, ingredients: list[str]) -> dict:
+    def run(self, ingredients: list[str], user_id: int | None = None) -> dict:
         """跑完整流程;stage 取值 inserted / rejected / invalid / duplicate;存疑入库附 doubts。"""
         ingredients = list(dict.fromkeys(ingredients))
-        pantry = repository.find_ingredients_by_names(ingredients)
+        pantry = repository.find_ingredients_by_names(ingredients, owner=user_id)
         feedback = None
         last: dict = {"stage": "invalid", "errors": ["流水线未产出结果"]}
 
@@ -66,9 +66,9 @@ class DishPipeline:
 
             verdict, problems = self.verifier.verify(record, ingredients)
             if verdict == "pass":
-                return self._insert(ingredients, record, None)
+                return self._insert(ingredients, record, None, user_id)
             if verdict == "存疑":
-                result = self._insert(ingredients, record, "\n".join(problems))
+                result = self._insert(ingredients, record, "\n".join(problems), user_id)
                 if result["stage"] == "inserted":
                     result["doubts"] = problems
                     reject_log.log_reject(record["name"], "存疑", problems, entity="菜品")
@@ -84,10 +84,10 @@ class DishPipeline:
         )
         return last
 
-    def _insert(self, ingredients: list[str], record: dict, remark: str | None) -> dict:
+    def _insert(self, ingredients: list[str], record: dict, remark: str | None, user_id: int | None = None) -> dict:
         db = to_db_record(record, remark)
         try:
-            repository.insert_dish(db)
+            repository.insert_dish(db, user_id)
         except IntegrityError:
             return {"ingredients": ingredients, "stage": "duplicate", "name": record.get("name")}
         return {

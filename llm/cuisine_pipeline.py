@@ -56,7 +56,7 @@ class CuisinePipeline:
         self.verifier = verifier or CuisineVerifier()
         self.max_revisions = max_revisions
 
-    def run(self, mode: str, payload: dict) -> dict:
+    def run(self, mode: str, payload: dict, user_id: int | None = None) -> dict:
         """跑完整流程;stage 取值 inserted/rejected/invalid/duplicate/invalid_input/not_found。"""
         if mode not in MODES:
             return {"stage": "invalid_input", "reason": f"未知模式:{mode}"}
@@ -66,7 +66,7 @@ class CuisinePipeline:
             if reason:
                 return {"stage": "invalid_input", "reason": reason}
             name = str(payload["name"]).strip()
-            if repository.find_dish_by_name(name):
+            if repository.find_dish_by_name(name, owner=user_id):
                 return {"stage": "duplicate", "name": name}
             payload = {"name": name}
         elif mode == "cuisine":
@@ -85,9 +85,13 @@ class CuisinePipeline:
             payload = {"ingredients": list(dict.fromkeys(i.strip() for i in raw))}
 
         ingredients = payload.get("ingredients", [])
-        pantry = repository.find_ingredients_by_names(ingredients) if ingredients else []
+        pantry = (
+            repository.find_ingredients_by_names(ingredients, owner=user_id)
+            if ingredients
+            else []
+        )
         known_names = (
-            repository.list_dish_names_by_cuisine(payload["cuisine"])
+            repository.list_dish_names_by_cuisine(payload["cuisine"], owner=user_id)
             if mode == "cuisine"
             else None
         )
@@ -132,9 +136,9 @@ class CuisinePipeline:
 
             verdict, problems = self.verifier.verify(record, mode, context)
             if verdict == "pass":
-                return self._insert(mode, record, None)
+                return self._insert(mode, record, None, user_id)
             if verdict == "存疑":
-                result = self._insert(mode, record, "\n".join(problems))
+                result = self._insert(mode, record, "\n".join(problems), user_id)
                 if result["stage"] == "inserted":
                     result["doubts"] = problems
                     reject_log.log_reject(record["name"], "存疑", problems, entity="美食大厨")
@@ -159,10 +163,10 @@ class CuisinePipeline:
         )
         return last
 
-    def _insert(self, mode: str, record: dict, remark: str | None) -> dict:
+    def _insert(self, mode: str, record: dict, remark: str | None, user_id: int | None = None) -> dict:
         db = to_db_record(record, remark)
         try:
-            repository.insert_dish(db)
+            repository.insert_dish(db, user_id)
         except IntegrityError:
             return {"stage": "duplicate", "name": record.get("name")}
         return {

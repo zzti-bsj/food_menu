@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import secrets
 
 from flask import Flask, g, jsonify, request, send_from_directory
 from pymysql.err import IntegrityError
@@ -16,7 +17,6 @@ STATUSES = ("待审核", "已通过", "已驳回")
 VOCAB = load_vocab()
 
 app = Flask(__name__, static_folder=None)
-_last_batch = None
 
 
 @app.after_request
@@ -40,47 +40,119 @@ def terms():
     return jsonify(list(VOCAB.solar_terms))
 
 
-@app.get("/api/ingredients")
-def ingredients():
+@app.get("/api/vocab")
+def vocab():
+    """全部封闭值域(移动端编辑表单的选项源):词表文件为唯一事实来源。"""
+    return jsonify({
+        "solar_terms": list(VOCAB.solar_terms),
+        "categories": list(VOCAB.categories),
+        "dish_categories": list(VOCAB.dish_categories),
+        "cuisines": list(VOCAB.cuisines),
+        "natures": list(VOCAB.natures),
+        "flavors": list(VOCAB.flavors),
+        "meridians": list(VOCAB.meridians),
+        "benefits": VOCAB.benefits,
+    })
+
+
+# ---------- 图片上传(移动端「编辑菜谱/食材」封面):落盘 web/uploads/,返回相对 URL ----------
+# URL 存 ingredient/dish 的 image 列(≤500 字),相对路径由移动端拼 API_BASE_URL。
+
+UPLOAD_DIR = Path(__file__).parent / "uploads"
+_UPLOAD_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+_UPLOAD_NAME_RE = re.compile(r"^[0-9a-f]{16}\.(jpg|jpeg|png|webp|gif)$")
+
+
+@app.post("/api/uploads")
+@auth.require_login
+def upload_image():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "缺少文件字段 file"}), 400
+    ext = Path(file.filename).suffix.lower()
+    if ext not in _UPLOAD_EXTS:
+        return jsonify({"error": "仅支持 jpg/png/webp/gif 图片"}), 400
+    blob = file.read()
+    if not blob:
+        return jsonify({"error": "文件为空"}), 400
+    if len(blob) > _UPLOAD_MAX_BYTES:
+        return jsonify({"error": "图片过大(>5MB)"}), 400
+    UPLOAD_DIR.mkdir(exist_ok=True)
+    name = f"{secrets.token_hex(8)}{ext}"
+    (UPLOAD_DIR / name).write_bytes(blob)
+    return jsonify({"url": f"/uploads/{name}"}), 201
+
+
+@app.get("/uploads/<name>")
+def serve_upload(name: str):
+    """仅放行随机名生成的文件,阻断路径拼接。"""
+    if not _UPLOAD_NAME_RE.match(name):
+        return jsonify({"error": "未找到文件"}), 404
+    return send_from_directory(UPLOAD_DIR, name)
+
+
+def _row_visible(row: dict) -> bool:
+    """列表可见性:官方(user_id 为空)人人可见;个人内容仅本人;admin 超管可见全部。"""
+    me = auth.current_user()
+    if me is None:
+        return row.get("user_id") is None
+    return (
+        row.get("user_id") is None
+        or me.get("role") == "admin"
+        or me.get("id") == row.get("user_id")
+    )
+
+
+def _grouped_visible(rows: list) -> dict:
+    """按状态分组,组内官方(NULL)排前、其余按 id 升序。"""
     grouped = {s: [] for s in STATUSES}
-    for row in repository.list_ingredients():
-        grouped[row["status"]].append(row)
-    return jsonify(grouped)
+    for row in rows:
+        if _row_visible(row):
+            grouped[row["status"]].append(row)
+    for s in STATUSES:
+        grouped[s].sort(key=lambda r: (r.get("user_id") is not None, r["id"]))
+    return grouped
+
+
+@app.get("/api/ingredients")
+@auth.optional_login
+def ingredients():
+    return jsonify(_grouped_visible(repository.list_ingredients()))
 
 
 @app.post("/api/status")
+@auth.require_login
 def set_status():
+    """审核食材:仅归属人或 admin(超管);非可见一律 404 防探测。"""
     data = request.get_json(silent=True) or {}
     name, status = data.get("name"), data.get("status")
     if not name or status not in STATUSES:
         return jsonify({"error": "参数不合法"}), 400
-    if not repository.update_ingredient_status(name, status):
+    row = repository.find_ingredient_by_name(name)
+    if row is None or not _can_write(row):
         return jsonify({"error": f"未找到食材:{name}"}), 404
+    repository.update_ingredient_status(name, status)
     return jsonify({"ok": True})
 
 
 @app.post("/api/batch")
+@auth.optional_login
 def run_batch():
-    global _last_batch
+    """跑食材批次;登录时产出归属当前用户,未登录归属官方(未归属)。"""
     data = request.get_json(silent=True) or {}
     term = data.get("term", "")
     if term not in VOCAB.solar_term_index:
         return jsonify({"error": f"非法节气:{term}"}), 400
-    _last_batch = IngredientBatchPipeline().run(term)
-    return jsonify(_last_batch)
-
-
-@app.get("/api/batch/last")
-def last_batch():
-    return jsonify(_last_batch)
+    me = auth.current_user()
+    user_id = me["id"] if me else None
+    return jsonify(IngredientBatchPipeline().run(term, user_id=user_id))
 
 
 @app.get("/api/dishes")
+@auth.optional_login
 def dishes():
-    grouped = {s: [] for s in STATUSES}
-    for row in repository.list_dishes():
-        grouped[row["status"]].append(row)
-    return jsonify(grouped)
+    return jsonify(_grouped_visible(repository.list_dishes()))
 
 
 @app.get("/api/cuisines")
@@ -89,10 +161,13 @@ def cuisines():
 
 
 @app.post("/api/dishes")
+@auth.optional_login
 def create_dish():
+    me = auth.current_user()
+    user_id = me["id"] if me else None
     data = request.get_json(silent=True) or {}
     if data.get("chef") == "cuisine":
-        return jsonify(CuisinePipeline().run(data.get("mode") or "", data))
+        return jsonify(CuisinePipeline().run(data.get("mode") or "", data, user_id=user_id))
     ingredients = data.get("ingredients")
     if (
         not isinstance(ingredients, list)
@@ -101,17 +176,21 @@ def create_dish():
     ):
         return jsonify({"error": "ingredients 须为非空字符串数组"}), 400
     names = list(dict.fromkeys(i.strip() for i in ingredients))
-    return jsonify(DishPipeline().run(names))
+    return jsonify(DishPipeline().run(names, user_id=user_id))
 
 
 @app.post("/api/dish/status")
+@auth.require_login
 def set_dish_status():
+    """审核菜品:仅归属人或 admin(超管);非可见一律 404 防探测。"""
     data = request.get_json(silent=True) or {}
     name, status = data.get("name"), data.get("status")
     if not name or status not in STATUSES:
         return jsonify({"error": "参数不合法"}), 400
-    if not repository.update_dish_status(name, status):
+    row = repository.find_dish_by_name_any(name)
+    if row is None or not _can_write(row):
         return jsonify({"error": f"未找到菜品:{name}"}), 404
+    repository.update_dish_status(name, status)
     return jsonify({"ok": True})
 
 

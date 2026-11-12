@@ -100,7 +100,7 @@ export default function ReviewIngredientScreen() {
           </>
         )}
         <Text style={[type.caption, { color: colors.ink3, marginTop: spacing.s4 }]}>
-          状态:{item.status} · ID {item.id} · 通过后 C 端可见
+          ID {item.id} · {item.status}
         </Text>
       </ScrollView>
 

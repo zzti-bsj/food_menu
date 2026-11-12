@@ -5,3 +5,6 @@ __pycache__/
 !.env.*.example
 .pytest_cache/
 logs/
+
+# 图片上传落盘目录(web/app.py)
+web/uploads/

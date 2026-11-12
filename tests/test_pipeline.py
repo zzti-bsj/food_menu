@@ -42,7 +42,7 @@ def test_fill_prompt_contains_vocab_and_name():
 
 def test_pipeline_bad_fill_json_fails_gracefully(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline("不是 JSON", '{"verdict":"pass","problems":[]}')
 
     result = pipeline.run("红薯")
@@ -53,7 +53,7 @@ def test_pipeline_bad_fill_json_fails_gracefully(monkeypatch):
 
 def test_pipeline_invalid_record_stops_before_verify(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     bad = json.dumps({"name": "山药", "nature": "超热"}, ensure_ascii=False)
     pipeline, _ = make_pipeline(bad, '{"verdict":"pass","problems":[]}')
 
@@ -65,7 +65,7 @@ def test_pipeline_invalid_record_stops_before_verify(monkeypatch):
 
 def test_pipeline_rejected_by_verifier(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline(
         FILLED, '{"verdict":"fail","problems":["归经与本草记载不符"]}'
     )
@@ -78,7 +78,7 @@ def test_pipeline_rejected_by_verifier(monkeypatch):
 
 def test_pipeline_pass_inserts_pending_record(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline(FILLED, '{"verdict":"pass","problems":[]}')
 
     result = pipeline.run("山药")
@@ -86,10 +86,22 @@ def test_pipeline_pass_inserts_pending_record(monkeypatch):
     assert inserted and inserted[0]["name"] == "山药"
 
 
+def test_pipeline_pass_inserts_with_owner(monkeypatch):
+    """回归:登录用户的归属必须穿透到入库(user_id 不能在 _insert 调用点丢失)。"""
+    captured = []
+    monkeypatch.setattr(
+        repository, "insert_ingredient", lambda r, user_id=None: captured.append(user_id)
+    )
+    pipeline, _ = make_pipeline(FILLED, '{"verdict":"pass","problems":[]}')
+    result = pipeline.run("白萝卜", user_id=7)
+    assert result["stage"] == "inserted"
+    assert captured == [7]
+
+
 def test_pipeline_duplicate_name(monkeypatch):
     from pymysql.err import IntegrityError
 
-    def raise_duplicate(record):
+    def raise_duplicate(record, user_id=None):
         raise IntegrityError(1062, "Duplicate entry")
 
     monkeypatch.setattr(repository, "insert_ingredient", raise_duplicate)
@@ -116,7 +128,7 @@ def test_verifier_returns_doubt_verdict():
 
 def test_pipeline_revision_recovers_from_invalid(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     bad = json.dumps({"name": "山药", "nature": "超热"}, ensure_ascii=False)
     filler = IngredientFiller(client=FakeJSONClient([bad, FILLED]))
     verifier = IngredientVerifier(client=FakeJSONClient('{"verdict":"pass","problems":[]}'))
@@ -128,7 +140,7 @@ def test_pipeline_revision_recovers_from_invalid(monkeypatch):
 
 
 def test_pipeline_revision_cap(monkeypatch):
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: None)
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: None)
     bad = json.dumps({"name": "山药", "nature": "超热"}, ensure_ascii=False)
     filler = IngredientFiller(client=FakeJSONClient(bad))
     pipeline = IngredientPipeline(
@@ -143,7 +155,7 @@ def test_pipeline_revision_cap(monkeypatch):
 
 def test_pipeline_doubt_inserts_with_doubts(monkeypatch):
     inserted = []
-    monkeypatch.setattr(repository, "insert_ingredient", lambda r: inserted.append(r))
+    monkeypatch.setattr(repository, "insert_ingredient", lambda r, user_id=None: inserted.append(r))
     pipeline, _ = make_pipeline(FILLED, '{"verdict":"存疑","problems":["性味记载存在分歧"]}')
 
     result = pipeline.run("山药")

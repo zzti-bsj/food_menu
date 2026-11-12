@@ -79,6 +79,29 @@ export function CameraIcon({ size = 12, color }: IconProps) {
   );
 }
 
+/** 垃圾桶(删除) */
+export function TrashIcon({ size = 18, color }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Path
+        d="M3 6h18M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6M5.5 6l.8 13a1.5 1.5 0 0 0 1.5 1.4h8.4a1.5 1.5 0 0 0 1.5-1.4l.8-13"
+        {...strokeProps(color)}
+      />
+      <Path d="M10 10v6M14 10v6" {...strokeProps(color)} />
+    </Svg>
+  );
+}
+
+/** 放大镜(搜索) */
+export function SearchIcon({ size = 18, color }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Circle cx={11} cy={11} r={7} {...strokeProps(color)} />
+      <Path d="m20 20-4.35-4.35" {...strokeProps(color)} />
+    </Svg>
+  );
+}
+
 /** 碗(菜品生成入口) */
 export function BowlIcon({ size = 19, color }: IconProps) {
   return (
@@ -99,6 +122,28 @@ export function LeafLineIcon({ size = 19, color }: IconProps) {
         d="M5.5 18.5C5.5 10.5 11 5 19.5 4.5c.4 8.5-5 14-14 14zM5.5 18.5c2.6-4.6 6-8 10.5-10.4"
         {...strokeProps(color)}
       />
+    </Svg>
+  );
+}
+
+/** 眼睛(私有食单「查看」操作) */
+export function EyeIcon({ size = 14, color }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Path
+        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"
+        {...strokeProps(color)}
+      />
+      <Circle cx={12} cy={12} r={3} {...strokeProps(color)} />
+    </Svg>
+  );
+}
+
+/** 对勾(可见性说明条) */
+export function CheckIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Path d="m5 12 5 5L20 7" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" stroke={color} />
     </Svg>
   );
 }
