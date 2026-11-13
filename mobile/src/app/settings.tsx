@@ -45,7 +45,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView contentContainerStyle={[statics.content, { paddingTop: insets.top + spacing.s2, paddingBottom: 122 + insets.bottom }]}>
       <View style={statics.topBar}>
-        <Text style={[type.serifTitle, { color: colors.ink }]}>设置</Text>
+        <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>设置</Text>
       </View>
 
       {/* 入节提醒 */}

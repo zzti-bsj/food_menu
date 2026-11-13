@@ -116,7 +116,7 @@ export default function EditProfileScreen() {
           >
             <Text style={statics.backIcon}>‹</Text>
           </Pressable>
-          <Text style={[type.serifTitle, { color: colors.ink }]}>编辑资料</Text>
+          <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>编辑资料</Text>
           <View style={statics.back} />
         </View>
 

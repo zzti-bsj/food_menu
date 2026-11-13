@@ -60,7 +60,7 @@ export default function ReviewDishScreen() {
           >
             <Text style={statics.backIcon}>‹</Text>
           </Pressable>
-          <Text style={[type.serifTitle, { color: colors.ink }]}>菜品复审</Text>
+          <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>菜品复审</Text>
           <View style={statics.back} />
         </View>
 

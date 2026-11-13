@@ -89,7 +89,7 @@ export default function ReviewScreen() {
         >
           <Text style={statics.backIcon}>‹</Text>
         </Pressable>
-        <Text style={[type.serifTitle, { color: colors.ink }]}>审核台</Text>
+        <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>审核台</Text>
         <View style={statics.back} />
       </View>
 

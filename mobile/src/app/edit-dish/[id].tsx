@@ -204,7 +204,7 @@ export default function EditDishScreen() {
           >
             <Text style={statics.backIcon}>‹</Text>
           </Pressable>
-          <Text style={[type.serifTitle, { color: colors.ink }]}>编辑菜谱</Text>
+          <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>编辑菜谱</Text>
           <View style={statics.back} />
         </View>
 

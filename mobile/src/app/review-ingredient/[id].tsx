@@ -66,7 +66,7 @@ export default function ReviewIngredientScreen() {
           >
             <Text style={statics.backIcon}>‹</Text>
           </Pressable>
-          <Text style={[type.serifTitle, { color: colors.ink }]}>食材复审</Text>
+          <Text style={[type.serifTitle, { color: colors.ink }]} numberOfLines={1}>食材复审</Text>
           <View style={statics.back} />
         </View>
 

@@ -93,7 +93,13 @@ export default function LoginScreen() {
           >
             <Text style={statics.backIcon}>‹</Text>
           </Pressable>
-          <Text style={[type.serifTitle, { color: colors.ink }]}>登录 / 注册</Text>
+          {/* 单行约束:Android serif 回退/大字体下宽度易超,折行会被 44 高顶栏裁掉 */}
+          <Text
+            numberOfLines={1}
+            style={[type.serifTitle, { color: colors.ink, flex: 1, textAlign: 'center' }]}
+          >
+            登录 / 注册
+          </Text>
           <View style={statics.back} />
         </View>
 
