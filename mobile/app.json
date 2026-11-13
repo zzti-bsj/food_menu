@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.shike"
+      "package": "com.anonymous.shike",
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "server",

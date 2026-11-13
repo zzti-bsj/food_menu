@@ -1,10 +1,10 @@
 /** 我的(Tab 5)—— 对照 mine.html v1.4.3:衬线页题 + 右上角齿轮 +
  *  资料头部(粉彩卡:头像章 + 相机角标 + 昵称/角色/掩码·ID,点按 → 编辑资料)+
  *  入口列表(私有食单带计数 / 官方库审核 / 用户管理[admin] / 设置)。退出在设置页。 */
-import { type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PanelPop, Seal, Sparkle } from '@/components/brand';
 import { CameraIcon, ChevronRightIcon, GearIcon, LeafLineIcon, PenIcon, ShieldIcon } from '@/components/icons';
@@ -30,7 +30,7 @@ export default function MineScreen() {
   const insets = useSafeAreaInsets();
 
   // 入口计数:与私有食单口径一致,仅「已通过」(待审核在审核台;已驳回在审核台可删除)
-  const { data: mine } = useAsync(async () => {
+  const { data: mine, reload } = useAsync(async () => {
     const [dishGroups, ingredientGroups] = await Promise.all([
       listDishGroups(),
       listIngredientGroups(),
@@ -42,6 +42,13 @@ export default function MineScreen() {
       ingredients: mineOf(ingredientGroups.已通过),
     };
   }, [user?.id]);
+
+  // 聚焦即重拉:生成/审核后回到本页计数即时生效
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
 
   return (
     <ScrollView

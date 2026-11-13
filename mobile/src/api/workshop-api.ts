@@ -1,7 +1,8 @@
 /** 工坊端点封装 —— 契约见 web/app.py + llm/batch.py + llm/dish_pipeline.py + llm/cuisine_pipeline.py:
- *  POST /api/batch {term} → {term, recommended[], inserted[], doubts{name:[]}, failed[{name,stage,errors?|problems?}]}
- *  POST /api/dishes 健康厨师 {ingredients[]} → stage: inserted/duplicate/rejected/invalid
- *  POST /api/dishes 美食大厨 {chef:"cuisine", mode, ...} → stage: 上四种 + invalid_input/not_found
+ *  POST /api/jobs {kind:"batch"|"dish", payload} → 202 {job_id}(流水线转服务端后台线程,抗切后台断连)
+ *  GET /api/jobs/{id} → {status:"running"|"done"|"error", result?, error?}(完成快照服务端保留 15 分钟)
+ *  POST /api/batch {term} → 同步版(保留给 web 控制台;移动端不再使用)
+ *  POST /api/dishes 健康厨师 {ingredients[]} / 美食大厨 {chef:"cuisine", mode, ...}(同步版,同上)
  *  POST /api/status|/api/dish/status {name, status} → {ok:true} */
 import { apiFetch } from './client';
 import type { Dish } from './types';
@@ -43,27 +44,42 @@ export interface CuisineChefResult {
   doubts?: string[];
 }
 
-export function runBatch(term: string): Promise<BatchResult> {
-  return apiFetch<BatchResult>('/api/batch', { method: 'POST', body: { term } });
+/** 生成作业快照(status=done 携 result,error 携 error 文案) */
+export interface GenerationJobSnapshot<T> {
+  status: 'running' | 'done' | 'error' | string;
+  result?: T;
+  error?: string;
 }
 
-/** 健康厨师:ingredients 非空字符串数组(去重保序由端内做,后端也会做) */
-export function runDishChef(ingredients: string[]): Promise<DishChefResult> {
-  return apiFetch<DishChefResult>('/api/dishes', {
-    method: 'POST',
-    body: { ingredients },
-  });
+export type GenerationJobKind = 'batch' | 'dish';
+
+export function startGenerationJob(
+  kind: GenerationJobKind,
+  payload: Record<string, unknown>,
+): Promise<{ job_id: string }> {
+  return apiFetch<{ job_id: string }>('/api/jobs', { method: 'POST', body: { kind, payload } });
 }
 
-/** 美食大厨:mode = cuisine | name | ingredient */
-export function runCuisineChef(
+export function getGenerationJob<T>(jobId: string): Promise<GenerationJobSnapshot<T>> {
+  return apiFetch<GenerationJobSnapshot<T>>(`/api/jobs/${jobId}`);
+}
+
+/** 食材流水线作业:payload {term} */
+export function startBatchJob(term: string): Promise<{ job_id: string }> {
+  return startGenerationJob('batch', { term });
+}
+
+/** 健康厨师作业:ingredients 非空字符串数组(去重保序由端内做,后端也会做) */
+export function startDishJob(ingredients: string[]): Promise<{ job_id: string }> {
+  return startGenerationJob('dish', { ingredients });
+}
+
+/** 美食大厨作业:mode = cuisine | name | ingredient */
+export function startCuisineJob(
   mode: 'cuisine' | 'name' | 'ingredient',
   payload: { cuisine?: string; name?: string; ingredients?: string[] },
-): Promise<CuisineChefResult> {
-  return apiFetch<CuisineChefResult>('/api/dishes', {
-    method: 'POST',
-    body: { chef: 'cuisine', mode, ...payload },
-  });
+): Promise<{ job_id: string }> {
+  return startGenerationJob('dish', { chef: 'cuisine', mode, ...payload });
 }
 
 /** 食材审核状态写入(仅工坊;name 为业务键) */

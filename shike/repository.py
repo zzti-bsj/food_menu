@@ -64,8 +64,8 @@ def insert_ingredient(record: dict, user_id: int | None = None) -> None:
 
 
 def list_ingredients() -> list[dict]:
-    """返回全部食材完整字段(含归属 user_id),待审核在前。"""
-    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_INGREDIENT_FIELDS, "status", "created_at"))
+    """返回全部食材完整字段(含 image 与归属 user_id),待审核在前。"""
+    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_INGREDIENT_WRITABLE, "status", "created_at"))
     conn = pymysql.connect(**db_config())
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cur:
@@ -301,8 +301,8 @@ def insert_dish(record: dict, user_id: int | None = None) -> None:
 
 
 def list_dishes() -> list[dict]:
-    """返回全部菜品完整字段(含归属 user_id),待审核在前。"""
-    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_DISH_FIELDS, "status", "created_at"))
+    """返回全部菜品完整字段(含 image 与归属 user_id),待审核在前。"""
+    fields = ", ".join(f"`{f}`" for f in ("id", "user_id", *_DISH_WRITABLE, "status", "created_at"))
     conn = pymysql.connect(**db_config())
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cur:

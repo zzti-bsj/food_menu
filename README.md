@@ -47,7 +47,7 @@ After=network.target mysql.service
 User=<部署用户>
 WorkingDirectory=/srv/shike
 Environment=SHIKE_ENV=prod
-ExecStart=/srv/shike/.venv/bin/gunicorn -w 2 -b 0.0.0.0:8787 'web.app:app'
+ExecStart=/srv/shike/.venv/bin/gunicorn -w 2 --threads 4 --timeout 120 -b 0.0.0.0:8787 'web.app:app'
 Restart=always
 
 [Install]

@@ -11,10 +11,10 @@ import { ChefBadge, PanelPop, Sparkle, Sticker } from '@/components/brand';
 import { SectionLabel } from '@/components/ui/section-label';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { IngredientInput } from '@/components/content/ingredient-input';
-import { ApiError } from '@/api/client';
 import { listCuisines } from '@/api/content-api';
-import { runCuisineChef, runDishChef } from '@/api/workshop-api';
+import { startCuisineJob, startDishJob, type CuisineChefResult } from '@/api/workshop-api';
 import { useAsync } from '@/hooks/use-async';
+import { useGenerationJob } from '@/hooks/use-generation-job';
 import { parseIngredients, parseSteps, parseStyle, splitList } from '@/utils/text';
 import { seasonOfTerm } from '@/domain/solar-terms';
 import type { Dish } from '@/api/types';
@@ -40,49 +40,46 @@ export default function DishGenerateScreen() {
   const [nameInput, setNameInput] = useState('');
   const [modeIngredients, setModeIngredients] = useState<string[]>([]);
 
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [healthResult, setHealthResult] = useState<Awaited<ReturnType<typeof runDishChef>> | null>(null);
-  const [cuisineResult, setCuisineResult] = useState<Awaited<ReturnType<typeof runCuisineChef>> | null>(null);
+  // 表单校验错误(本地即时);作业错误(网络/服务端)由 hook 提供
+  const [inputError, setInputError] = useState<string | null>(null);
+  // 生成走服务端异步作业:切后台/锁屏不中断,回本页自动接续
+  const { running, error, result, start } = useGenerationJob<CuisineChefResult>('dish');
+  /** 产出当前结果的厨师(健康/美食各留一份展示,切厨师互不串台) */
+  const [resultChef, setResultChef] = useState<Chef | null>(null);
 
-  async function generate() {
-    setRunning(true);
-    setError(null);
-    try {
-      if (chef === 'health') {
-        if (picked.length === 0) {
-          setError('请至少添加 1 项食材');
-          return;
-        }
-        setHealthResult(await runDishChef(picked));
-      } else {
-        let payload: { cuisine?: string; name?: string; ingredients?: string[] };
-        if (mode === 'cuisine') {
-          if (!cuisine) {
-            setError('请选择菜系');
-            return;
-          }
-          payload = { cuisine };
-        } else if (mode === 'name') {
-          if (!nameInput.trim()) {
-            setError('请输入菜名');
-            return;
-          }
-          payload = { name: nameInput.trim() };
-        } else {
-          if (modeIngredients.length === 0) {
-            setError('请至少添加 1 项食材');
-            return;
-          }
-          payload = { ingredients: modeIngredients };
-        }
-        setCuisineResult(await runCuisineChef(mode, payload));
+  function generate() {
+    setInputError(null);
+    if (chef === 'health') {
+      if (picked.length === 0) {
+        setInputError('请至少添加 1 项食材');
+        return;
       }
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : '网络连接失败,请检查网络后重试');
-    } finally {
-      setRunning(false);
+      setResultChef('health');
+      start(() => startDishJob(picked));
+      return;
     }
+    let payload: { cuisine?: string; name?: string; ingredients?: string[] };
+    if (mode === 'cuisine') {
+      if (!cuisine) {
+        setInputError('请选择菜系');
+        return;
+      }
+      payload = { cuisine };
+    } else if (mode === 'name') {
+      if (!nameInput.trim()) {
+        setInputError('请输入菜名');
+        return;
+      }
+      payload = { name: nameInput.trim() };
+    } else {
+      if (modeIngredients.length === 0) {
+        setInputError('请至少添加 1 项食材');
+        return;
+      }
+      payload = { ingredients: modeIngredients };
+    }
+    setResultChef('cuisine');
+    start(() => startCuisineJob(mode, payload));
   }
 
   return (
@@ -119,7 +116,7 @@ export default function DishGenerateScreen() {
               selected={chef === 'health'}
               onPress={() => {
                 setChef('health');
-                setError(null);
+                setInputError(null);
               }}
             />
             <ChefCard
@@ -129,7 +126,7 @@ export default function DishGenerateScreen() {
               selected={chef === 'cuisine'}
               onPress={() => {
                 setChef('cuisine');
-                setError(null);
+                setInputError(null);
               }}
             />
           </View>
@@ -167,7 +164,7 @@ export default function DishGenerateScreen() {
                   accessibilityState={{ selected: mode === m }}
                   onPress={() => {
                     setMode(m);
-                    setError(null);
+                    setInputError(null);
                   }}
                   style={[statics.modeTab, mode === m && { backgroundColor: summer.main, borderColor: summer.main }]}
                 >
@@ -228,6 +225,11 @@ export default function DishGenerateScreen() {
           labelColor={chef === 'health' ? '#FFFFFF' : brand.amberInk}
         />
       </View>
+      {!!inputError && (
+        <Text accessibilityRole="alert" style={[type.caption, { color: functional.danger, marginTop: spacing.s2 }]}>
+          {inputError}
+        </Text>
+      )}
       {!!error && (
         <Text accessibilityRole="alert" style={[type.caption, { color: functional.danger, marginTop: spacing.s2 }]}>
           {error}
@@ -235,34 +237,34 @@ export default function DishGenerateScreen() {
       )}
 
       {/* 结果:健康厨师 */}
-      {chef === 'health' && healthResult && (
+      {chef === 'health' && result && resultChef === 'health' && (
         <ResultBlock
           title="健康厨师产出"
-          resultStage={healthResult.stage}
-          dish={healthResult.dish}
-          name={healthResult.name}
-          excluded={healthResult.excluded}
-          doubts={healthResult.doubts}
-          errors={healthResult.errors ?? healthResult.problems}
-          ingredients={healthResult.ingredients}
+          resultStage={result.stage}
+          dish={result.dish}
+          name={result.name}
+          excluded={result.excluded}
+          doubts={result.doubts}
+          errors={result.errors ?? result.problems}
+          ingredients={result.ingredients}
         />
       )}
       {/* 结果:美食大厨 */}
-      {chef === 'cuisine' && cuisineResult && (
+      {chef === 'cuisine' && result && resultChef === 'cuisine' && (
         <ResultBlock
           title="美食大厨产出"
-          resultStage={cuisineResult.stage}
-          dish={cuisineResult.dish}
-          name={cuisineResult.name}
-          excluded={cuisineResult.excluded}
-          doubts={cuisineResult.doubts}
+          resultStage={result.stage}
+          dish={result.dish}
+          name={result.name}
+          excluded={result.excluded}
+          doubts={result.doubts}
           errors={
-            cuisineResult.errors ??
-            cuisineResult.problems ??
-            (cuisineResult.reason ? [cuisineResult.reason] : undefined)
+            result.errors ??
+            result.problems ??
+            (result.reason ? [result.reason] : undefined)
           }
-          ingredients={cuisineResult.ingredients}
-          showCover={cuisineResult.stage === 'inserted'}
+          ingredients={result.ingredients}
+          showCover={result.stage === 'inserted'}
         />
       )}
     </ScrollView>

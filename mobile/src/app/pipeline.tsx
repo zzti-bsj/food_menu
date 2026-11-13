@@ -9,8 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PanelPop, Sparkle } from '@/components/brand';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { ChevronRightIcon } from '@/components/icons';
-import { runBatch, type BatchResult } from '@/api/workshop-api';
-import { ApiError } from '@/api/client';
+import { startBatchJob, type BatchResult } from '@/api/workshop-api';
+import { useGenerationJob } from '@/hooks/use-generation-job';
 import { SEASON_TERMS, currentTerm, nearbyTerms } from '@/domain/solar-terms';
 import { colors, functional, seasons, activeSeason } from '@/theme/tokens';
 import { fontDisplay, pagePad, radius, shadows, spacing, tabularNums, type } from '@/theme/theme';
@@ -31,20 +31,11 @@ export default function PipelineScreen() {
 
   const [term, setTerm] = useState<string>(now);
   const [showAll, setShowAll] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<BatchResult | null>(null);
+  // 生成走服务端异步作业:切后台/锁屏不中断,回本页自动接续
+  const { running, error, result, start } = useGenerationJob<BatchResult>('pipeline');
 
-  async function run() {
-    setRunning(true);
-    setError(null);
-    try {
-      setResult(await runBatch(term));
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : '网络连接失败,请检查网络后重试');
-    } finally {
-      setRunning(false);
-    }
+  function run() {
+    start(() => startBatchJob(term));
   }
 
   const failedInvalid = (result?.failed ?? []).filter((f) => f.stage === 'invalid').length;

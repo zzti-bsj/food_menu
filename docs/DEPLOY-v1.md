@@ -60,7 +60,7 @@ openssl rand -hex 32          # 生成新 JWT 密钥,填入 SHIKE_JWT_SECRET(不
 **启动**(前台验证):
 
 ```bash
-SHIKE_ENV=prod .venv/bin/gunicorn -w 2 -b 0.0.0.0:8787 'web.app:app'
+SHIKE_ENV=prod .venv/bin/gunicorn -w 2 --threads 4 --timeout 120 -b 0.0.0.0:8787 'web.app:app'
 ```
 
 **常驻**(systemd,`/etc/systemd/system/shike.service`):
@@ -74,7 +74,7 @@ After=network.target mysql.service
 User=<部署用户>
 WorkingDirectory=/srv/shike
 Environment=SHIKE_ENV=prod
-ExecStart=/srv/shike/.venv/bin/gunicorn -w 2 -b 0.0.0.0:8787 'web.app:app'
+ExecStart=/srv/shike/.venv/bin/gunicorn -w 2 --threads 4 --timeout 120 -b 0.0.0.0:8787 'web.app:app'
 Restart=always
 
 [Install]

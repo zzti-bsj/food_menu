@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DefaultImage, NatureBadge, Seal } from '@/components/brand';
+import { FoodImage } from '@/components/content/food-image';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { listApprovedIngredients } from '@/api/content-api';
 import { useAsync } from '@/hooks/use-async';
@@ -134,15 +135,19 @@ function IngredientCard({ item, onPress }: { item: Ingredient; onPress: () => vo
       onPress={onPress}
       style={({ pressed }) => [statics.card, shadows.card.android, pressed && { opacity: 0.92 }]}
     >
-      {/* 图区舞台(设计稿 .stage):圆盘居中 */}
-      <LinearGradient
-        colors={[colors.surface2, colors.paperTint]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={statics.stage}
-      >
-        <DefaultImage kind="leaf" size={56} />
-      </LinearGradient>
+        {/* 图区舞台(设计稿 .stage):有图用真实图,无图落默认占位 */}
+        <LinearGradient
+          colors={[colors.surface2, colors.paperTint]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={statics.stage}
+        >
+          {item.image ? (
+            <FoodImage uri={item.image} kind="leaf" width={56} height={56} />
+          ) : (
+            <DefaultImage kind="leaf" size={56} />
+          )}
+        </LinearGradient>
       <View style={statics.cardBody}>
         <Text style={statics.name} numberOfLines={1}>
           {item.name}

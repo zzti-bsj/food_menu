@@ -5,6 +5,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DefaultImage, OrnDivider, PanelPop, Seal, Sparkle } from '@/components/brand';
+import { FoodImage } from '@/components/content/food-image';
 import { DishCard } from '@/components/content/dish-card';
 import { SectionLabel } from '@/components/ui/section-label';
 import { listApprovedDishes, listApprovedIngredients, listTerms } from '@/api/content-api';
@@ -91,7 +92,11 @@ export default function TodayScreen() {
               onPress={() => router.push(`/ingredient/${item.id}`)}
               style={statics.foodItem}
             >
-              <DefaultImage kind="leaf" size={56} />
+              {item.image ? (
+                <FoodImage uri={item.image} kind="leaf" width={56} height={56} />
+              ) : (
+                <DefaultImage kind="leaf" size={56} />
+              )}
               <Text style={statics.foodName}>{item.name}</Text>
             </Pressable>
           ))}

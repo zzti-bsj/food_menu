@@ -1,6 +1,10 @@
 from pathlib import Path
+import json
 import re
 import secrets
+import threading
+import time
+import uuid
 
 from flask import Flask, g, jsonify, request, send_from_directory
 from pymysql.err import IntegrityError
@@ -136,17 +140,40 @@ def set_status():
     return jsonify({"ok": True})
 
 
+def _plan_batch(payload: dict, user_id: int | None):
+    """校验食材批次入参并返回流水线调用;非法返回 (None, 错误文案)。同步端点与作业共用。"""
+    term = payload.get("term", "")
+    if term not in VOCAB.solar_term_index:
+        return None, f"非法节气:{term}"
+    return lambda: IngredientBatchPipeline().run(term, user_id=user_id), None
+
+
+def _plan_dish(payload: dict, user_id: int | None):
+    """校验厨师入参并返回流水线调用;非法返回 (None, 错误文案)。同步端点与作业共用。"""
+    if payload.get("chef") == "cuisine":
+        mode = payload.get("mode") or ""
+        return lambda: CuisinePipeline().run(mode, payload, user_id=user_id), None
+    ingredients = payload.get("ingredients")
+    if (
+        not isinstance(ingredients, list)
+        or not ingredients
+        or not all(isinstance(i, str) and i.strip() for i in ingredients)
+    ):
+        return None, "ingredients 须为非空字符串数组"
+    names = list(dict.fromkeys(i.strip() for i in ingredients))
+    return lambda: DishPipeline().run(names, user_id=user_id), None
+
+
 @app.post("/api/batch")
 @auth.optional_login
 def run_batch():
     """跑食材批次;登录时产出归属当前用户,未登录归属官方(未归属)。"""
-    data = request.get_json(silent=True) or {}
-    term = data.get("term", "")
-    if term not in VOCAB.solar_term_index:
-        return jsonify({"error": f"非法节气:{term}"}), 400
     me = auth.current_user()
     user_id = me["id"] if me else None
-    return jsonify(IngredientBatchPipeline().run(term, user_id=user_id))
+    run, err = _plan_batch(request.get_json(silent=True) or {}, user_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(run())
 
 
 @app.get("/api/dishes")
@@ -165,18 +192,103 @@ def cuisines():
 def create_dish():
     me = auth.current_user()
     user_id = me["id"] if me else None
+    run, err = _plan_dish(request.get_json(silent=True) or {}, user_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(run())
+
+
+# ---------- 异步作业:生成类流水线分钟级耗时,同步长连接切后台即断 ----------
+# 移动端 POST /api/jobs 拿 job_id,GET /api/jobs/<id> 轮询快照;作业在本 worker 进程的
+# 后台线程执行(repository 每次调用独立建连,线程安全),客户端断开不影响产出。
+# 快照(含结果)完成后保留 _JOB_TTL 供客户端取件;worker 重启即丢,客户端按 404 提示重试。
+
+_JOBS: dict[str, dict] = {}
+_JOBS_LOCK = threading.Lock()
+_JOB_TTL = 15 * 60
+
+_PLANS = {"batch": _plan_batch, "dish": _plan_dish}
+
+
+def _gc_jobs_locked() -> None:
+    now = time.time()
+    stale = [jid for jid, job in _JOBS.items() if job["expires"] is not None and job["expires"] < now]
+    for jid in stale:
+        _JOBS.pop(jid, None)
+
+
+def _job_snapshot(job: dict) -> dict:
+    snap: dict = {"status": job["status"]}
+    if job["status"] == "done":
+        snap["result"] = job["result"]
+    elif job["status"] == "error":
+        snap["error"] = job["error"]
+    return snap
+
+
+def _start_job(key: tuple, user_id: int | None, run) -> dict:
+    with _JOBS_LOCK:
+        _gc_jobs_locked()
+        for existing in _JOBS.values():
+            # 同参数作业在途:复用同一份,防双击/重连触发重复生成
+            if existing["key"] == key and existing["status"] == "running":
+                return existing
+        job = {
+            "id": uuid.uuid4().hex,
+            "key": key,
+            "owner": user_id,
+            "status": "running",
+            "result": None,
+            "error": None,
+            "expires": None,
+        }
+        _JOBS[job["id"]] = job
+
+    def worker() -> None:
+        try:
+            result = run()
+            with _JOBS_LOCK:
+                job.update(status="done", result=result, expires=time.time() + _JOB_TTL)
+        except Exception as exc:  # 流水线异常转快照,不让异常带崩 worker 线程之外的请求
+            with _JOBS_LOCK:
+                job.update(status="error", error=f"生成失败:{exc}", expires=time.time() + _JOB_TTL)
+
+    threading.Thread(target=worker, daemon=True, name=f"job-{job['id'][:8]}").start()
+    return job
+
+
+@app.post("/api/jobs")
+@auth.optional_login
+def create_job():
+    """异步版 batch/dish 生成:入参校验与同步端点同源;返回 {job_id} 供轮询。"""
     data = request.get_json(silent=True) or {}
-    if data.get("chef") == "cuisine":
-        return jsonify(CuisinePipeline().run(data.get("mode") or "", data, user_id=user_id))
-    ingredients = data.get("ingredients")
-    if (
-        not isinstance(ingredients, list)
-        or not ingredients
-        or not all(isinstance(i, str) and i.strip() for i in ingredients)
-    ):
-        return jsonify({"error": "ingredients 须为非空字符串数组"}), 400
-    names = list(dict.fromkeys(i.strip() for i in ingredients))
-    return jsonify(DishPipeline().run(names, user_id=user_id))
+    kind = data.get("kind")
+    payload = data.get("payload")
+    if kind not in _PLANS or not isinstance(payload, dict):
+        return jsonify({"error": "kind 须为 batch|dish,payload 须为对象"}), 400
+    me = auth.current_user()
+    user_id = me["id"] if me else None
+    run, err = _PLANS[kind](payload, user_id)
+    if err:
+        return jsonify({"error": err}), 400
+    key = (kind, json.dumps(payload, sort_keys=True, ensure_ascii=False), user_id)
+    return jsonify({"job_id": _start_job(key, user_id, run)["id"]}), 202
+
+
+@app.get("/api/jobs/<job_id>")
+@auth.optional_login
+def job_status(job_id: str):
+    me = auth.current_user()
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+        if job is None:
+            return jsonify({"error": "任务不存在或已过期"}), 404
+        # 归属作业仅本人(或 admin)可读;匿名官方作业人人可读
+        if job["owner"] is not None and (
+            me is None or (me["id"] != job["owner"] and me.get("role") != "admin")
+        ):
+            return jsonify({"error": "无权查看该任务"}), 403
+        return jsonify(_job_snapshot(job))
 
 
 @app.post("/api/dish/status")
